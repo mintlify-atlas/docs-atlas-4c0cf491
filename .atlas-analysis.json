@@ -1,0 +1,104 @@
+{
+  "projectType": "saas",
+  "projectName": "Neru",
+  "projectDescription": "Keyboard-driven navigation for macOS - Navigate and click without touching your mouse",
+  "theme": "aspen",
+  "primaryColor": "#94cb04",
+  "lightColor": "#545454",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Navigation Modes",
+            "pages": [
+              "modes/recursive-grid",
+              "modes/grid",
+              "modes/hints",
+              "modes/scroll"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/overview",
+              "configuration/hotkeys",
+              "configuration/modes",
+              "configuration/appearance"
+            ]
+          },
+          {
+            "group": "CLI & Automation",
+            "pages": [
+              "cli/commands",
+              "cli/ipc",
+              "cli/scripting"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/troubleshooting",
+              "advanced/platform-support",
+              "advanced/app-compatibility"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "Development",
+        "groups": [
+          {
+            "group": "Architecture",
+            "pages": [
+              "development/architecture",
+              "development/hexagonal-design",
+              "development/cross-platform"
+            ]
+          },
+          {
+            "group": "Contributing",
+            "pages": [
+              "development/setup",
+              "development/coding-standards",
+              "development/testing"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Recursive Grid Mode - precise coordinate-based navigation with recursive subdivision",
+    "Grid Mode - quick coarse navigation with coordinate system",
+    "Hints Mode - accessibility-driven clickable element labels",
+    "Scroll Mode - Vim-style scrolling with familiar keybindings",
+    "CLI & IPC - full programmatic control via command-line and Unix sockets",
+    "Cross-platform architecture - hexagonal design supporting macOS, Linux, and Windows"
+  ],
+  "publicApiSurface": [
+    "neru launch - start daemon",
+    "neru hints - show clickable hints mode",
+    "neru grid - show coordinate grid mode",
+    "neru recursive_grid - recursive cell navigation",
+    "neru scroll - vim-style scrolling",
+    "neru action left_click - perform left click",
+    "neru action right_click - perform right click",
+    "neru action move_mouse - move mouse cursor",
+    "neru services install - install as system service",
+    "neru config reload - reload configuration",
+    "neru toggle-screen-share - toggle overlay visibility in screen sharing",
+    "neru status - check daemon status",
+    "neru doctor - health check"
+  ]
+}
