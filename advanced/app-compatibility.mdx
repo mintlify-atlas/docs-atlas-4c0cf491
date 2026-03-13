@@ -1,0 +1,396 @@
+---
+title: Application Compatibility
+description: Tested applications and known compatibility issues
+---
+
+Neru works with a wide range of macOS applications. This page documents tested apps, compatibility notes, and configuration tips for specific applications.
+
+## Universal Compatibility
+
+**Grid Mode** and **Recursive Grid Mode** work universally across all macOS applications because they use coordinate-based navigation without requiring accessibility tree access.
+
+**Hints Mode** requires accessibility API support and may need additional configuration for some applications.
+
+## Tested Applications
+
+### Native macOS Apps
+
+<CardGroup cols={2}>
+  <Card title="System Apps" icon="apple">
+    **Fully Compatible**
+    
+    - Finder
+    - Safari
+    - Mail
+    - System Settings
+    - Terminal
+    - Notes
+    - Calendar
+    - Reminders
+  </Card>
+  <Card title="System UI" icon="bars">
+    **Fully Compatible**
+    
+    - Menubar
+    - Dock
+    - Mission Control (macOS 26.x)
+    - Notification Center
+    - Spotlight
+    - Launchpad
+  </Card>
+</CardGroup>
+
+### Electron Applications
+
+<CardGroup cols={2}>
+  <Card title="Development" icon="code">
+    **Requires AX Support**
+    
+    - VS Code
+    - Cursor
+    - Atom
+    - Sublime Text
+    - JetBrains IDEs
+  </Card>
+  <Card title="Communication & Productivity" icon="comments">
+    **Requires AX Support**
+    
+    - Slack
+    - Discord
+    - Microsoft Teams
+    - Notion
+    - Obsidian
+    - Spotify
+  </Card>
+</CardGroup>
+
+<Warning>
+Electron apps require additional accessibility support. Enable this in your config:
+
+```toml
+[hints.additional_ax_support]
+enable = true
+```
+</Warning>
+
+### Web Browsers
+
+<CardGroup cols={2}>
+  <Card title="Chromium-Based" icon="chrome">
+    **Requires AX Support**
+    
+    - Google Chrome
+    - Microsoft Edge
+    - Brave
+    - Arc
+    - Vivaldi
+  </Card>
+  <Card title="Other Browsers" icon="firefox">
+    **Variable Support**
+    
+    - Firefox (requires AX support)
+    - Safari (native support)
+    - Zen Browser (requires AX support)
+  </Card>
+</CardGroup>
+
+### Creative Applications
+
+<CardGroup cols={2}>
+  <Card title="Adobe Creative Cloud" icon="palette">
+    **May Need Custom Config**
+    
+    - Photoshop
+    - Illustrator
+    - InDesign
+    - Premiere Pro
+  </Card>
+  <Card title="Design Tools" icon="pen-nib">
+    **Fully Compatible**
+    
+    - Figma (Electron, needs AX)
+    - Sketch
+    - Affinity Designer
+  </Card>
+</CardGroup>
+
+## App-Specific Configuration
+
+### VS Code / Cursor
+
+**Issue**: Hints don't appear in the editor area.
+
+**Solution**: Enable Electron accessibility support (auto-detected):
+
+```toml
+[hints.additional_ax_support]
+enable = true
+```
+
+VS Code and Cursor are automatically detected as Electron apps and will receive the necessary accessibility enhancements.
+
+### Adobe Applications
+
+**Issue**: Hints are misaligned or missing in Adobe apps.
+
+**Solution**: Add custom clickable roles for Adobe apps:
+
+```toml
+[[hints.app_configs]]
+bundle_id = "com.adobe.illustrator"
+additional_clickable_roles = ["AXStaticText", "AXImage"]
+ignore_clickable_check = true
+
+[[hints.app_configs]]
+bundle_id = "com.adobe.Photoshop"
+additional_clickable_roles = ["AXStaticText", "AXImage", "AXGroup"]
+ignore_clickable_check = true
+```
+
+Find the bundle ID for your Adobe app:
+
+```bash
+osascript -e 'id of app "Adobe Illustrator"'
+```
+
+### Slack / Discord
+
+**Issue**: Hints don't appear in message areas.
+
+**Solution**: Enable Electron support:
+
+```toml
+[hints.additional_ax_support]
+enable = true
+```
+
+Both Slack and Discord are Electron apps and will be auto-detected.
+
+### Firefox
+
+**Issue**: Hints don't appear in web page content.
+
+**Solution**: Enable additional accessibility support:
+
+```toml
+[hints.additional_ax_support]
+enable = true
+```
+
+Firefox requires explicit accessibility tree enablement for web content.
+
+### Mission Control
+
+**Issue**: No hints appear in Mission Control view.
+
+**Solution**: Enable Dock hints and Mission Control detection:
+
+```toml
+[hints]
+include_dock_hints = true
+detect_mission_control = true
+```
+
+<Warning>
+`detect_mission_control` **only works on macOS 26.x (Tahoe)**. Do not enable this on earlier macOS versions!
+</Warning>
+
+### Menubar Apps
+
+**Issue**: Hints don't appear on menubar items.
+
+**Solution**: Enable menubar hints:
+
+```toml
+[hints]
+include_menubar_hints = true
+
+# For specific menubar apps:
+additional_menubar_hints_targets = [
+    "com.apple.controlcenter",
+    "net.kovidgoyal.kitty",
+]
+```
+
+### Custom Electron Apps
+
+**Issue**: Your custom or lesser-known Electron app isn't auto-detected.
+
+**Solution**: Add the bundle ID manually:
+
+```toml
+[hints.additional_ax_support]
+enable = true
+additional_electron_bundles = [
+    "com.your.electronapp",
+]
+```
+
+Find the bundle ID:
+
+```bash
+osascript -e 'id of app "YourAppName"'
+```
+
+## Known Limitations
+
+### Password Fields
+
+**Issue**: Neru automatically disables when password fields are focused.
+
+**Reason**: macOS enables "Secure Input" mode for password fields. Neru detects this and suspends the event tap to prevent unintended key logging.
+
+**Workaround**: None needed - this is a security feature. Use mouse or trackpad for password entry.
+
+### Full-Screen Games
+
+**Issue**: Neru may not work in full-screen games.
+
+**Reason**: Many games bypass standard macOS window management and use exclusive full-screen modes.
+
+**Workaround**: Add the game to your `excluded_apps` list:
+
+```toml
+[general]
+excluded_apps = [
+    "com.example.game",
+]
+```
+
+### Screen Recording / Presentation Mode
+
+**Issue**: Overlays may appear in screen recordings.
+
+**Reason**: Neru uses native macOS windows which are captured by screen recording software.
+
+**Workaround**: Temporarily disable Neru during recordings or presentations:
+
+```bash
+neru stop
+```
+
+Restart when done:
+
+```bash
+neru launch
+```
+
+### Virtual Machines
+
+**Issue**: Hints may not work inside VM guest OS windows.
+
+**Reason**: VM applications present their own accessibility tree which doesn't expose the guest OS UI.
+
+**Workaround**: Use Grid Mode or Recursive Grid Mode instead, which work universally:
+
+```toml
+[hotkeys]
+"Cmd+Shift+C" = "recursive_grid"
+```
+
+## Excluding Applications
+
+If Neru interferes with a specific application, you can exclude it:
+
+```toml
+[general]
+excluded_apps = [
+    "com.apple.Terminal",
+    "com.googlecode.iterm2",
+    "com.example.problematic.app",
+]
+```
+
+Find the bundle ID:
+
+```bash
+osascript -e 'id of app "AppName"'
+```
+
+## Reporting Compatibility Issues
+
+If you encounter compatibility issues with a specific application:
+
+1. **Gather information:**
+   - App name and version
+   - macOS version: `sw_vers`
+   - Neru version: `neru --version`
+   - Bundle ID: `osascript -e 'id of app "AppName"'`
+
+2. **Enable debug logging:**
+   ```toml
+   [logging]
+   log_level = "debug"
+   ```
+
+3. **Capture logs:**
+   ```bash
+   pkill neru && neru launch
+   # Try to reproduce the issue
+   tail -100 ~/Library/Logs/neru/app.log > neru-debug.log
+   ```
+
+4. **Search existing issues:**
+   - https://github.com/y3owk1n/neru/issues
+
+5. **Open a new issue:**
+   - Include all gathered information
+   - Describe expected vs actual behavior
+   - Attach debug logs
+
+## Performance Tips
+
+### Slow Hint Generation
+
+If hints appear slowly in a specific app:
+
+1. **Reduce depth levels:**
+   ```toml
+   [hints]
+   max_depth = 10  # Default is higher, reduce if needed
+   ```
+
+2. **Exclude unnecessary roles:**
+   ```toml
+   [[hints.app_configs]]
+   bundle_id = "com.example.slowapp"
+   excluded_roles = ["AXStaticText", "AXGroup"]
+   ```
+
+3. **Use Grid Mode instead:**
+   Grid and Recursive Grid modes don't query the accessibility tree and are always fast.
+
+### High CPU Usage
+
+If Neru uses excessive CPU with a specific app:
+
+1. **Disable debug logging:**
+   ```toml
+   [logging]
+   log_level = "info"
+   ```
+
+2. **Exclude the app:**
+   ```toml
+   [general]
+   excluded_apps = ["com.example.cpuintensiveapp"]
+   ```
+
+3. **Report the issue:** High CPU usage is not expected. Please report it with logs.
+
+## Best Practices
+
+1. **Use Grid Mode for universal compatibility**: When Hints Mode doesn't work well, Recursive Grid Mode is the recommended fallback.
+
+2. **Enable AX support globally**: If you use multiple Electron apps, enable it once:
+   ```toml
+   [hints.additional_ax_support]
+   enable = true
+   ```
+
+3. **Test in different apps**: Not all apps expose the same accessibility tree. Test your configuration across your most-used applications.
+
+4. **Keep Neru updated**: Compatibility improvements are added regularly. Update to the latest version:
+   ```bash
+   brew upgrade neru
+   ```

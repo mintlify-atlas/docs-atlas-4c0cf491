@@ -1,0 +1,304 @@
+---
+title: Development Setup
+description: Set up your development environment to contribute to Neru
+---
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+
+- **Go 1.26+** - [Install Go](https://golang.org/dl/)
+- **Xcode Command Line Tools** - `xcode-select --install` (macOS)
+- **Just** - Command runner - [Install](https://github.com/casey/just)
+- **golangci-lint** - Linter - [Install](https://golangci-lint.run/usage/install/)
+
+## Development Environment Options
+
+Choose one of the following setup methods for the best development experience:
+
+### Option A: Devbox (Recommended)
+
+[Devbox](https://www.jetify.com/devbox) provides an isolated development environment with all required tools pre-configured.
+
+<Steps>
+  <Step title="Install Devbox">
+    ```bash
+    curl -fsSL https://get.jetify.com/devbox | bash
+    ```
+  </Step>
+
+  <Step title="Choose activation method">
+    **Option 1: Manual shell activation**
+    ```bash
+    devbox shell
+    ```
+
+    **Option 2: Automatic activation with direnv (recommended)**
+    ```bash
+    # Install direnv
+    brew install direnv
+    
+    # Add to your shell configuration
+    # For bash: add to ~/.bashrc
+    eval "$(direnv hook bash)"
+    
+    # For zsh: add to ~/.zshrc
+    eval "$(direnv hook zsh)"
+    
+    # For fish: add to ~/.config/fish/config.fish
+    direnv hook fish | source
+    ```
+
+    The `.envrc` file will automatically activate devbox when you cd into the project.
+  </Step>
+</Steps>
+
+Devbox automatically installs and manages:
+
+- Go 1.26.0
+- gopls (Go language server)
+- gotools, gofumpt, golines (Go formatting tools)
+- golangci-lint (linter)
+- just (command runner)
+- clang-tools (C/C++ tools for CGo)
+
+### Option B: Manual Installation
+
+Install essential tools manually using Homebrew:
+
+```bash
+brew install go just golangci-lint llvm
+```
+
+**Tool descriptions:**
+
+- `go` - Go compiler and toolchain (1.26+ required)
+- `just` - Command runner for build scripts
+- `golangci-lint` - Go linter and formatter
+- `llvm` - LLVM tools including clang-format for C/C++/Objective-C formatting (required for CGo code)
+
+**Optional additional tools** (install via `go install` if desired):
+
+```bash
+go install golang.org/x/tools/gopls@latest
+go install mvdan.cc/gofumpt@latest
+go install github.com/segmentio/golines@latest
+```
+
+## Clone and Setup
+
+<Steps>
+  <Step title="Clone the repository">
+    ```bash
+    git clone https://github.com/y3owk1n/neru.git
+    cd neru
+    ```
+  </Step>
+
+  <Step title="Verify your setup">
+    ```bash
+    # Check Go version
+    go version  # Should be 1.26+
+    
+    # Check tools
+    just --version
+    golangci-lint --version
+    
+    # List available commands
+    just --list
+    ```
+  </Step>
+
+  <Step title="Build and test">
+    ```bash
+    # Build the application
+    just build
+    
+    # Run unit tests
+    just test-unit
+    
+    # Launch Neru
+    ./bin/neru launch
+    ```
+  </Step>
+
+  <Step title="Test it works">
+    ```bash
+    # Trigger hints mode (check your configured hotkey)
+    # Default: Should show hint overlays
+    ```
+  </Step>
+</Steps>
+
+## IDE Setup
+
+For the best development experience, we recommend:
+
+<CardGroup cols={2}>
+  <Card title="VS Code" icon="code">
+    Install the official Go extension for VS Code with language server support.
+  </Card>
+  
+  <Card title="GoLand" icon="laptop-code">
+    JetBrains GoLand provides excellent Go development support out of the box.
+  </Card>
+  
+  <Card title="EditorConfig" icon="gear">
+    Install EditorConfig plugin for consistent formatting across editors.
+  </Card>
+  
+  <Card title="Pre-commit Hooks" icon="git">
+    Set up git hooks to automate formatting and linting before commits.
+  </Card>
+</CardGroup>
+
+### Installing Pre-commit Hooks
+
+```bash
+# Install pre-commit hooks
+cp scripts/pre-commit .git/hooks/pre-commit
+chmod +x .git/hooks/pre-commit
+```
+
+## Common Development Commands
+
+Once set up, use these Just commands for development:
+
+| Task | Command | Description |
+|------|---------|-------------|
+| Build | `just build` | Compile the application |
+| Run | `just run` | Build and run the application |
+| Test | `just test` | Run unit and integration tests |
+| Test | `just test-unit` | Run unit tests only |
+| Test | `just test-integration` | Run integration tests only |
+| Test | `just test-race` | Run tests with race detection |
+| Test | `just test-all` | Run all tests (unit + integration + race) |
+| Lint | `just lint` | Run linters |
+| Format | `just fmt` | Format code (Go + Objective-C) |
+| Clean | `just clean` | Remove build artifacts |
+| Bundle | `just bundle` | Build macOS .app bundle |
+
+## Cross-Platform Setup
+
+Neru can be developed on any OS, but some features require platform-specific APIs.
+
+### macOS (Full Support)
+
+Full environment support including CGo, Accessibility APIs, and Overlays. Follow the standard setup above.
+
+### Linux (In Progress)
+
+Requires:
+- `gcc` and `pkg-config` for build foundations
+- AT-SPI development libraries (recommended)
+- X11/Wayland development tools (recommended)
+
+```bash
+# Ubuntu/Debian
+sudo apt-get install build-essential pkg-config libatspi2.0-dev
+
+# Fedora
+sudo dnf install gcc pkg-config at-spi2-core-devel
+```
+
+### Windows (In Progress)
+
+Requires:
+- C compiler (e.g., MinGW or MSVC) for CGo components
+- UI Automation (UIA) SDK (recommended)
+
+## Debugging
+
+To debug Neru during development:
+
+### Enable Debug Logging
+
+Edit your configuration file (`~/.config/neru/config.toml`):
+
+```toml
+[logging]
+log_level = "debug"
+```
+
+### View Logs
+
+```bash
+# macOS
+tail -f ~/Library/Logs/neru/app.log
+
+# Linux
+tail -f ~/.local/state/neru/log/app.log
+```
+
+### Use Delve Debugger
+
+```bash
+# Install Delve
+go install github.com/go-delve/delve/cmd/dlv@latest
+
+# Debug Neru
+dlv debug ./cmd/neru
+```
+
+## Troubleshooting
+
+### Build Failures
+
+If you encounter build errors:
+
+1. **Check Go version**: `go version` should be 1.26 or higher
+2. **Clean and rebuild**: `just clean && just build`
+3. **Update dependencies**: `just deps`
+4. **Verify CGo setup**: On macOS, ensure Xcode Command Line Tools are installed
+
+### Test Failures
+
+If tests are failing:
+
+1. **Run tests with verbose output**: `go test -v ./...`
+2. **Check for race conditions**: `just test-race`
+3. **Run integration tests separately**: `just test-integration`
+
+## Quick Start Summary
+
+Get Neru running locally in 5 minutes:
+
+```bash
+# 1. Clone and setup
+git clone https://github.com/y3owk1n/neru.git
+cd neru
+
+# 2. Set up development environment (choose one)
+## Option A: Using Devbox (Recommended)
+devbox shell
+
+## Option B: Manual installation
+brew install just golangci-lint
+
+# 3. Build and run
+just build
+./bin/neru launch
+
+# 4. Verify it works
+# Trigger hints mode with your configured hotkey
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Coding Standards" icon="book" href="/development/coding-standards">
+    Learn about code style, naming conventions, and best practices
+  </Card>
+  
+  <Card title="Testing Guide" icon="flask" href="/development/testing">
+    Understand testing patterns and how to write tests
+  </Card>
+  
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Explore Neru's architecture and design patterns
+  </Card>
+  
+  <Card title="CLI Reference" icon="terminal" href="/cli/commands">
+    Learn all available CLI commands
+  </Card>
+</CardGroup>

@@ -1,0 +1,407 @@
+---
+title: Recursive Grid Mode
+description: Precise mouse-free navigation using recursive subdivision
+icon: grid-2
+---
+
+## Overview
+
+Recursive Grid Mode is Neru's **recommended navigation mode** for daily use. It divides your screen into a coordinate grid and lets you drill into any region with keyboard keys until you land exactly where you want.
+
+<Note>
+  **Why Recursive Grid is recommended**: Works everywhere out-of-the-box, requires no app-specific setup, and provides pixel-perfect precision through recursive subdivision.
+</Note>
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="Universal Compatibility" icon="globe">
+    Works in every app, every window, every corner of macOS — no exceptions, no accessibility tree required.
+  </Card>
+  
+  <Card title="Pixel-Perfect Precision" icon="crosshairs">
+    Recursively subdivide the screen to reach any exact location with just a few keystrokes.
+  </Card>
+  
+  <Card title="Predictable Navigation" icon="compass">
+    Consistent grid layout and keyboard mappings make navigation intuitive and muscle-memory friendly.
+  </Card>
+  
+  <Card title="Zero Configuration" icon="bolt">
+    No app-specific tweaks needed — activate and navigate immediately.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+Recursive Grid Mode starts by dividing your screen into cells (default 2x2). Each keystroke selects a cell and subdivides it further, narrowing your focus until you reach the target location.
+
+```
+Initial 2x2 Grid          After pressing 'u'       After pressing 'k'
+┌─────────┬─────────┐     ┌─────┬─────┐            ┌──┬──┐
+│    u    │    i    │     │  u  │  i  │            │u │i │
+│         │         │  →  ├─────┼─────┤         →  ├──┼──┤
+├─────────┼─────────┤     │  j  │  k  │            │j │k │ ← Final position
+│    j    │    k    │     └─────┴─────┘            └──┴──┘
+└─────────┴─────────┘     (upper-left quadrant)    (lower-right of that)
+```
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Activate Recursive Grid Mode">
+    Press the global hotkey (default: `Cmd+Shift+C`) or run:
+    
+    ```bash
+    neru recursive_grid
+    ```
+    
+    The screen will be divided into a grid with labeled cells.
+  </Step>
+  
+  <Step title="Navigate to Your Target">
+    Press keys to select cells and subdivide:
+    
+    - **`u`** — Upper-left cell
+    - **`i`** — Upper-right cell  
+    - **`j`** — Lower-left cell
+    - **`k`** — Lower-right cell
+    
+    The cursor moves to the center of each selected region automatically.
+  </Step>
+  
+  <Step title="Perform an Action">
+    Once positioned, use direct action keys or trigger from other modes:
+    
+    ```bash
+    Shift+L       # Left click (default)
+    Shift+R       # Right click (default)
+    ```
+    
+    The mode exits automatically after the action (if configured in `auto_exit_actions`).
+  </Step>
+</Steps>
+
+---
+
+## Default Keybindings
+
+All keybindings are fully customizable in your `config.toml`.
+
+### Navigation Keys
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `u` | Upper-left | Select the upper-left cell |
+| `i` | Upper-right | Select the upper-right cell |
+| `j` | Lower-left | Select the lower-left cell |
+| `k` | Lower-right | Select the lower-right cell |
+
+<Note>
+  The default keys (`u`, `i`, `j`, `k`) are chosen for home-row proximity and Vim-style familiarity.
+</Note>
+
+### Control Keys
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Backspace` | Backtrack | Move up one depth level and recenter |
+| `Delete` | Backtrack | Alternative to Backspace |
+| `Space` | Reset | Return to initial center position |
+| `Esc` | Exit | Exit recursive grid mode |
+
+<Tip>
+  Use `Backspace` to undo a misclick and return to the previous subdivision level.
+</Tip>
+
+---
+
+## Usage Patterns
+
+<Tabs>
+  <Tab title="Quick Click">
+    **Scenario**: Click a button in the upper-right area of your screen.
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+C
+    
+    # Navigate: upper-right → upper-right → lower-left
+    i, i, j
+    
+    # Click
+    Shift+L
+    ```
+    
+    The mode exits automatically after the click.
+  </Tab>
+  
+  <Tab title="Precise Positioning">
+    **Scenario**: Position cursor on a small UI element requiring multiple subdivisions.
+    
+    ```bash
+    # Activate mode  
+    Cmd+Shift+C
+    
+    # Drill down 5 levels
+    u, i, k, k, j
+    
+    # Perform right-click
+    Shift+R
+    ```
+    
+    Each keystroke narrows the focus by subdividing the selected cell.
+  </Tab>
+  
+  <Tab title="CLI with Action">
+    **Scenario**: Automate a click at a specific screen region via script.
+    
+    ```bash
+    # Activate with pending action
+    neru recursive_grid --action left_click
+    
+    # Navigate to target (action executes at max depth)
+    # Type keys: u, k, i
+    ```
+    
+    <Warning>
+      The `--action` flag executes the action at maximum depth. For most workflows, configure `auto_exit_actions` instead.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Backtracking">
+    **Scenario**: Navigate to wrong area and correct the path.
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+C
+    
+    # Navigate: upper-left → oops, wrong area!
+    u
+    
+    # Backtrack to previous level
+    Backspace
+    
+    # Navigate to correct area: upper-right → lower-left
+    i, j
+    
+    # Click
+    Shift+L
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Configuration
+
+Recursive Grid Mode is configured in `[recursive_grid]` section of your `config.toml`.
+
+### Basic Settings
+
+```toml
+[recursive_grid]
+enabled = true
+grid_cols = 2              # Number of columns per subdivision
+grid_rows = 2              # Number of rows per subdivision
+keys = "uijk"              # Keys for cells (top-left, top-right, bottom-left, bottom-right)
+max_depth = 10             # Maximum subdivision depth
+min_size_width = 10        # Minimum cell width (pixels)
+min_size_height = 10       # Minimum cell height (pixels)
+```
+
+### Advanced: Per-Depth Layers
+
+Customize grid layout and keys for specific depths:
+
+```toml
+[[recursive_grid.layers]]
+depth = 3                  # At depth 3, use 3x3 grid
+grid_cols = 3
+grid_rows = 3
+keys = "asdfghjkl"         # 9 keys for 9 cells
+
+[[recursive_grid.layers]]
+depth = 5                  # At depth 5, use 4x4 grid
+grid_cols = 4
+grid_rows = 4
+keys = "qwerasdfzxcvtyui"  # 16 keys for 16 cells
+```
+
+<Tip>
+  Per-depth layers allow you to optimize for different use cases: coarse grids for initial navigation, fine grids for precision.
+</Tip>
+
+### Control Keys
+
+```toml
+[recursive_grid]
+reset_key = "space"        # Reset to initial center
+backspace_key = "backspace" # Move up one depth level
+```
+
+### Auto-Exit Actions
+
+Configure which actions automatically exit the mode:
+
+```toml
+[recursive_grid]
+auto_exit_actions = [
+  "left_click",
+  "right_click",
+  "middle_click",
+  "double_click"
+]
+```
+
+---
+
+## Visual Customization
+
+Customize overlay appearance in `[recursive_grid.overlay]`:
+
+```toml
+[recursive_grid.overlay]
+# Grid lines
+line_color = "#3B82F6"     # Blue grid lines
+line_width = 2.0
+
+# Cell labels
+label_background_color = "#1E293B"
+label_text_color = "#F1F5F9"
+label_font_size = 24.0
+label_padding = 8.0
+label_corner_radius = 6.0
+
+# Depth indicator
+show_depth_indicator = true
+depth_indicator_color = "#10B981"
+```
+
+---
+
+## Tips & Best Practices
+
+<Note>
+  **Start with 2x2 grid**: The default 2x2 layout provides optimal balance between keystroke count and cognitive load.
+</Note>
+
+<Tip>
+  **Use layers for precision**: Configure a 3x3 or 4x4 grid at deeper levels for fine-grained positioning without increasing initial complexity.
+</Tip>
+
+<Warning>
+  **Avoid excessive max_depth**: Setting `max_depth` too high can lead to unnecessarily deep navigation. The default of 10 is sufficient for most use cases.
+</Warning>
+
+### Workflow Optimization
+
+1. **Muscle Memory**: Practice the key layout (`u`/`i`/`j`/`k`) to build spatial awareness
+2. **Combine with Actions**: Configure `auto_exit_actions` for seamless click-and-exit workflows  
+3. **Use Reset Key**: When lost, press `Space` to return to initial center and start over
+4. **Backtrack Liberally**: Use `Backspace` to undo mistakes — it's faster than exiting and restarting
+
+---
+
+## CLI Reference
+
+### Activate Mode
+
+```bash
+neru recursive_grid
+```
+
+### Activate with Pending Action
+
+```bash
+neru recursive_grid --action left_click
+neru recursive_grid --action right_click
+```
+
+<Note>
+  The `--action` flag causes the action to execute at maximum depth. For most workflows, use `auto_exit_actions` configuration instead.
+</Note>
+
+### Check Status
+
+```bash
+neru status
+# Mode: recursive_grid
+```
+
+---
+
+## Troubleshooting
+
+### Grid Not Appearing
+
+**Symptom**: Hotkey pressed but no grid overlay appears.
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify Mode is Enabled">
+    Check your `config.toml`:
+    
+    ```toml
+    [recursive_grid]
+    enabled = true
+    ```
+  </Step>
+  
+  <Step title="Check Accessibility Permissions">
+    Ensure Neru has Accessibility permission in System Settings → Privacy & Security → Accessibility.
+  </Step>
+  
+  <Step title="Reload Configuration">
+    ```bash
+    neru config reload
+    ```
+  </Step>
+</Steps>
+
+### Cursor Not Moving
+
+**Symptom**: Keys pressed but cursor doesn't move to cell centers.
+
+**Check**:
+- Ensure you're pressing valid cell keys (`u`, `i`, `j`, `k` by default)
+- Verify keys are not remapped to conflicting actions in `config.toml`
+
+### Grid Too Coarse/Fine
+
+**Problem**: Grid cells are too large or too small for your workflow.
+
+**Solution**: Adjust grid size in configuration:
+
+```toml
+[recursive_grid]
+grid_cols = 3  # Increase for finer initial grid
+grid_rows = 3
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Grid Mode" icon="table-cells" href="/modes/grid">
+    Coordinate-based navigation without recursive subdivision
+  </Card>
+  
+  <Card title="Hints Mode" icon="hand-pointer" href="/modes/hints">
+    Label-based navigation using accessibility tree
+  </Card>
+  
+  <Card title="Configuration Reference" icon="gear" href="/configuration">
+    Complete guide to customizing Neru
+  </Card>
+  
+  <Card title="CLI Usage" icon="terminal" href="/cli">
+    Command-line interface and scripting
+  </Card>
+</CardGroup>

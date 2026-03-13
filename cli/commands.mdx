@@ -1,0 +1,588 @@
+---
+title: CLI Commands
+description: Complete reference for all Neru CLI commands
+---
+
+Neru provides a comprehensive command-line interface for controlling the daemon and automating workflows. All commands communicate with the daemon via IPC using Unix domain sockets.
+
+## Quick Reference
+
+<CardGroup cols={2}>
+  <Card title="Daemon Control" icon="power-off" href="#daemon-control">
+    Start, stop, and manage the Neru daemon
+  </Card>
+  <Card title="Navigation Modes" icon="compass" href="#navigation-commands">
+    Hints, grid, recursive-grid, and scroll modes
+  </Card>
+  <Card title="Mouse Actions" icon="mouse-pointer" href="#action-commands">
+    Immediate click and movement actions
+  </Card>
+  <Card title="Configuration" icon="gear" href="#configuration-commands">
+    Manage and reload configuration
+  </Card>
+</CardGroup>
+
+---
+
+## Daemon Control
+
+Manage the Neru daemon lifecycle.
+
+### launch
+
+Start the Neru daemon.
+
+```bash
+neru launch
+
+# With custom config file
+neru launch --config /path/to/config.toml
+neru launch -c ./configs/custom-config.toml
+```
+
+<ParamField path="--config, -c" type="string">
+  Path to custom configuration file
+</ParamField>
+
+<ParamField path="--timeout" type="integer" default="5">
+  IPC timeout in seconds
+</ParamField>
+
+### start
+
+Resume a paused daemon.
+
+```bash
+neru start
+```
+
+Enables Neru functionality if it was previously stopped with `neru stop`.
+
+### stop
+
+Pause the daemon without quitting.
+
+```bash
+neru stop
+```
+
+Disables Neru functionality but keeps the daemon running in the background. Use `neru start` to resume.
+
+### idle
+
+Cancel the active navigation mode and return to idle state.
+
+```bash
+neru idle
+```
+
+Exits the current mode (hints, grid, scroll, etc.) without stopping the daemon.
+
+---
+
+## Navigation Commands
+
+Activate navigation modes for keyboard-driven cursor control.
+
+### hints
+
+Show clickable hints on UI elements using macOS Accessibility APIs.
+
+```bash
+neru hints
+
+# With immediate action
+neru hints --action left_click
+neru hints --action right_click
+neru hints -a middle_click
+```
+
+<ParamField path="--action, -a" type="string">
+  Action to perform on hint selection. Supported actions: `left_click`, `right_click`, `middle_click`, `mouse_down`, `mouse_up`
+</ParamField>
+
+**Behavior:** Type the hint label (e.g., "AA") to select an element. When `--action` is specified, the action executes automatically upon selection.
+
+### grid
+
+Activate coordinate-based grid navigation.
+
+```bash
+neru grid
+
+# With immediate action
+neru grid --action left_click
+neru grid -a right_click
+```
+
+<ParamField path="--action, -a" type="string">
+  Action to perform on grid selection. Supported actions: `left_click`, `right_click`, `middle_click`, `mouse_down`, `mouse_up`
+</ParamField>
+
+**Behavior:** Type row+column labels (e.g., "ab") to select a position. The grid divides the screen into labeled cells.
+
+### recursive_grid
+
+Activate recursive cell-based navigation (also accepts `recursive-grid` alias).
+
+```bash
+neru recursive_grid
+neru recursive-grid
+
+# With immediate action
+neru recursive_grid --action left_click
+```
+
+<ParamField path="--action, -a" type="string">
+  Action to perform on final selection. Supported actions: `left_click`, `right_click`, `middle_click`, `mouse_down`, `mouse_up`
+</ParamField>
+
+**Default key mappings (warpd convention):**
+
+- `u` - Upper-left cell
+- `i` - Upper-right cell  
+- `j` - Lower-left cell
+- `k` - Lower-right cell
+- `Backspace` - Move up one level
+- `Space` - Reset to initial center (configurable)
+- `Esc` - Exit mode
+
+**Behavior:** The screen divides into NxN cells (default 2x2). Each selection recursively narrows the active area until minimum size is reached.
+
+### scroll
+
+Activate vim-style scrolling at the cursor position.
+
+```bash
+neru scroll
+```
+
+**Default scroll keys:**
+
+- `j` / `k` - Scroll down/up
+- `h` / `l` - Scroll left/right
+- `Ctrl+d` / `Ctrl+u` - Half-page down/up
+- `gg` - Jump to top
+- `Shift+G` - Jump to bottom
+- `Esc` - Exit scroll mode
+
+All key bindings are customizable in your config file under `[scroll.key_bindings]`.
+
+---
+
+## Action Commands
+
+Perform immediate mouse actions at the current cursor position.
+
+### action left_click
+
+```bash
+neru action left_click
+```
+
+Execute a left click at the current cursor location.
+
+### action right_click
+
+```bash
+neru action right_click
+```
+
+Execute a right click at the current cursor location.
+
+### action middle_click
+
+```bash
+neru action middle_click
+```
+
+Execute a middle click (scroll wheel click) at the current cursor location.
+
+### action mouse_down
+
+```bash
+neru action mouse_down
+```
+
+Press and hold the left mouse button at the current cursor location.
+
+### action mouse_up
+
+```bash
+neru action mouse_up
+```
+
+Release the left mouse button at the current cursor location.
+
+### action move_mouse
+
+Move the mouse cursor to an absolute position or screen center.
+
+```bash
+# Move to absolute coordinates
+neru action move_mouse --x 500 --y 300
+
+# Move to screen center
+neru action move_mouse --center
+
+# Move to center with offset (both axes)
+neru action move_mouse --center --x 50 --y -30
+
+# Move to center with single-axis offset
+neru action move_mouse --center --x 100
+```
+
+<ParamField path="--x" type="integer">
+  X coordinate in pixels. With `--center`, acts as horizontal offset from center (default 0)
+</ParamField>
+
+<ParamField path="--y" type="integer">
+  Y coordinate in pixels. With `--center`, acts as vertical offset from center (default 0)
+</ParamField>
+
+<ParamField path="--center" type="boolean">
+  Move to the center of the active screen. Offsets can be applied via `--x` and `--y`
+</ParamField>
+
+<Note>
+  When `--center` is **not** used, both `--x` and `--y` are required.
+</Note>
+
+### action move_mouse_relative
+
+Move the mouse cursor by a delta from the current position.
+
+```bash
+# Move 10 pixels right and 5 pixels up
+neru action move_mouse_relative --dx 10 --dy -5
+
+# Move 20 pixels left
+neru action move_mouse_relative --dx -20 --dy 0
+```
+
+<ParamField path="--dx" type="integer" required>
+  Delta X in pixels. Positive values move right, negative values move left
+</ParamField>
+
+<ParamField path="--dy" type="integer" required>
+  Delta Y in pixels. Positive values move down, negative values move up
+</ParamField>
+
+---
+
+## Screen Sharing
+
+Control overlay visibility during screen sharing sessions.
+
+### toggle-screen-share
+
+```bash
+neru toggle-screen-share
+```
+
+Toggle whether the overlay is visible during screen sharing (Zoom, Google Meet, OBS, etc.).
+
+**Behavior:**
+
+- When **hidden**, the overlay will not appear in shared screens but remains visible locally
+- When **visible**, the overlay appears normally in screen sharing
+- State resets to **visible** on Neru restart
+- Also accessible via system tray menu
+
+<Warning>
+  This feature uses macOS `NSWindow.sharingType` API (deprecated). Effectiveness varies:
+  - Works reliably on macOS 14 and earlier
+  - Limited effectiveness on macOS 15.4+ with ScreenCaptureKit
+  - Always test with your specific video conferencing software
+</Warning>
+
+---
+
+## Configuration Commands
+
+Manage Neru configuration without restarting.
+
+### config dump
+
+Display the currently active configuration as JSON.
+
+```bash
+neru config dump
+```
+
+**Example output:**
+
+```json
+{
+  "hint": {
+    "enabled": true,
+    "labels": "asdfjkl",
+    "overlay_style": {
+      "background_color": "#FFD700",
+      "text_color": "#000000"
+    }
+  },
+  "grid": {
+    "enabled": true,
+    "rows": 5,
+    "columns": 5
+  }
+}
+```
+
+### config reload
+
+Reload the configuration from disk without restarting the daemon.
+
+```bash
+neru config reload
+```
+
+Useful for testing configuration changes without interrupting your workflow.
+
+---
+
+## Status & Info
+
+Query daemon status and version information.
+
+### status
+
+Display the current status of the Neru daemon.
+
+```bash
+neru status
+```
+
+**Example output:**
+
+```
+Neru Status:
+  Status: running
+  Mode: idle
+  Config: /Users/username/.config/neru/config.toml
+```
+
+**Status values:** `running`, `stopped`  
+**Mode values:** `idle`, `hints`, `grid`, `recursive_grid`, `scroll`
+
+### version
+
+Display version information.
+
+```bash
+neru --version
+```
+
+**Example output:**
+
+```
+Neru version 0.1.0
+Git commit: a1b2c3d
+Build date: 2026-03-13
+```
+
+---
+
+## Service Management
+
+Manage Neru as a system service for automatic startup.
+
+### services install
+
+Install and load the system service.
+
+```bash
+neru services install
+```
+
+**macOS:** Creates a `launchd` service at `~/Library/LaunchAgents/com.neru.plist`  
+**Linux:** (Planned) Will support `systemd` user services  
+**Windows:** (Planned) Will support Task Scheduler
+
+### services status
+
+Check the status of the system service.
+
+```bash
+neru services status
+```
+
+### services start
+
+Start the system service.
+
+```bash
+neru services start
+```
+
+### services stop
+
+Stop the system service.
+
+```bash
+neru services stop
+```
+
+### services restart
+
+Restart the system service.
+
+```bash
+neru services restart
+```
+
+### services uninstall
+
+Unload and remove the system service.
+
+```bash
+neru services uninstall
+```
+
+<Note>
+  If you installed Neru via Nix or Homebrew, use their respective service managers (e.g., `home-manager` for Nix) instead of `neru services`.
+</Note>
+
+---
+
+## Health Check
+
+Diagnose component health and system configuration.
+
+### doctor
+
+Check the health of Neru components.
+
+```bash
+neru doctor
+```
+
+**Example output:**
+
+```
+✅ All systems operational
+```
+
+Or if issues are detected:
+
+```
+⚠️  Some components are unhealthy:
+  ✅ ipc: OK
+  ✅ accessibility: OK
+  ❌ permissions: Accessibility permissions not granted
+```
+
+---
+
+## Shell Completions
+
+Generate shell completions for command-line auto-completion.
+
+### Bash
+
+```bash
+neru completion bash > /usr/local/etc/bash_completion.d/neru
+```
+
+### Zsh
+
+```bash
+neru completion zsh > "${fpath[1]}/_neru"
+```
+
+### Fish
+
+```bash
+neru completion fish > ~/.config/fish/completions/neru.fish
+```
+
+---
+
+## Error Handling
+
+### Error Codes
+
+Structured error codes for scripting:
+
+- `OK` - Command succeeded
+- `ERR_MODE_DISABLED` - Navigation mode is disabled in config
+- `ERR_UNKNOWN_COMMAND` - Invalid command
+- `ERR_NOT_RUNNING` - Daemon is not running
+- `ERR_ALREADY_RUNNING` - Daemon is already running
+- `ERR_INVALID_INPUT` - Invalid command parameters
+- `ERR_ACTION_FAILED` - Action execution failed
+
+### Exit Codes
+
+All commands return:
+
+- `0` - Success
+- `1` - Error (check stderr for details)
+
+### Common Issues
+
+**Command hangs:**
+
+```bash
+# Force quit daemon
+pkill -9 neru
+
+# Restart
+neru launch
+```
+
+**Socket permission errors:**
+
+```bash
+# Remove stale socket
+rm -f /var/folders/*/*/T/neru.sock
+
+# Restart daemon
+neru launch
+```
+
+**Commands not working:**
+
+```bash
+# Verify daemon is running
+neru status
+
+# If not running, launch it
+neru launch
+```
+
+---
+
+## Global Flags
+
+These flags are available for all commands.
+
+<ParamField path="--config, -c" type="string">
+  Path to custom configuration file (overrides default search paths)
+</ParamField>
+
+<ParamField path="--timeout" type="integer" default="5">
+  IPC timeout in seconds for daemon communication
+</ParamField>
+
+<ParamField path="--help, -h" type="boolean">
+  Display help information for any command
+</ParamField>
+
+<ParamField path="--version" type="boolean">
+  Display version information
+</ParamField>
+
+---
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="IPC Protocol" icon="network-wired" href="/cli/ipc">
+    Learn about IPC message formats and communication
+  </Card>
+  <Card title="Scripting & Automation" icon="code" href="/cli/scripting">
+    Integrate Neru with skhd and shell scripts
+  </Card>
+</CardGroup>

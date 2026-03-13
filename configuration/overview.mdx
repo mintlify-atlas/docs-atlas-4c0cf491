@@ -1,0 +1,345 @@
+---
+title: Configuration Overview
+description: Learn how to configure Neru with TOML configuration files
+icon: gear
+---
+
+Neru uses TOML configuration files to customize behavior, appearance, and keyboard shortcuts. This guide covers the configuration system and file structure.
+
+## Configuration File Locations
+
+Neru searches for configuration files in the following order (first found wins):
+
+1. **`$XDG_CONFIG_HOME/neru/config.toml`** (if `XDG_CONFIG_HOME` is set)
+2. **`~/.config/neru/config.toml`** (recommended)
+3. **`~/.neru.toml`** (legacy)
+4. **`neru.toml`** (current directory)
+5. **`config.toml`** (current directory)
+
+<Info>
+This search order is the same on all platforms (macOS, Linux, Windows).
+</Info>
+
+### Custom Configuration Path
+
+You can specify a custom config file path when launching:
+
+```bash
+neru launch --config /path/to/custom-config.toml
+```
+
+## Default Configuration
+
+Neru works out of the box with sensible defaults. No config file is required.
+
+To create a custom configuration, copy the [default-config.toml](https://github.com/y3owk1n/neru/blob/main/configs/default-config.toml) to your preferred location:
+
+```bash
+mkdir -p ~/.config/neru
+curl -o ~/.config/neru/config.toml https://raw.githubusercontent.com/y3owk1n/neru/main/configs/default-config.toml
+```
+
+## Reloading Configuration
+
+After making changes to your config file, reload it without restarting:
+
+```bash
+neru config reload
+```
+
+Or restart the daemon:
+
+```bash
+pkill neru && neru launch
+```
+
+## Configuration Structure
+
+The configuration file is organized into sections:
+
+### General Settings
+
+```toml
+[general]
+excluded_apps = []                        # Bundle IDs to ignore
+accessibility_check_on_start = true        # Verify permissions on launch
+restore_cursor_position = false            # Return cursor to original position
+center_cursor_position = false             # Center cursor on screen after mode exit
+mode_exit_keys = ["Escape"]                # Keys that exit any mode
+passthrough_unbounded_keys = false         # Let unbound shortcuts reach macOS
+hide_overlay_in_screen_share = false       # Hide overlay in screen sharing
+```
+
+### Global Hotkeys
+
+```toml
+[hotkeys]
+"Cmd+Shift+Space" = "hints"
+"Cmd+Shift+G" = "grid"
+"Cmd+Shift+C" = "recursive_grid"
+"Cmd+Shift+S" = "scroll"
+```
+
+<Warning>
+Defining **any** custom hotkey replaces **all** defaults. You must explicitly define every hotkey you want.
+</Warning>
+
+### Mode Configuration
+
+Each navigation mode has its own configuration section:
+
+- **`[hints]`** - Accessibility-based hint mode
+- **`[grid]`** - Coordinate-based grid mode
+- **`[recursive_grid]`** - Recursive subdivision grid
+- **`[scroll]`** - Vim-style scrolling
+
+### Visual Customization
+
+Each mode has a `[mode.ui]` subsection for appearance:
+
+```toml
+[hints.ui]
+font_size = 10
+font_family = ""                          # Empty = system font
+background_color_light = "#F200CFCF"      # Light mode background
+background_color_dark = "#F2007A9E"       # Dark mode background
+text_color_light = "#FF003554"            # Light mode text
+text_color_dark = "#FFFFFFFF"             # Dark mode text
+```
+
+### Action Configuration
+
+Keyboard-driven mouse actions inside modes:
+
+```toml
+[action]
+move_mouse_step = 10                      # Pixels per arrow key press
+
+[action.key_bindings]
+left_click = "Shift+L"
+right_click = "Shift+R"
+middle_click = "Shift+M"
+move_mouse_up = "Up"
+move_mouse_down = "Down"
+move_mouse_left = "Left"
+move_mouse_right = "Right"
+```
+
+### System Settings
+
+```toml
+[systray]
+enabled = true                            # Show menu bar icon
+
+[smooth_cursor]
+move_mouse_enabled = false                # Animate cursor movement
+steps = 10                                # Animation steps
+delay = 1                                 # Milliseconds between steps
+
+[logging]
+log_level = "info"                        # debug, info, warn, error
+structured_logging = true                 # JSON format
+disable_file_logging = true               # Console only
+```
+
+## TOML Syntax Basics
+
+Neru uses TOML (Tom's Obvious, Minimal Language) for configuration:
+
+### Basic Types
+
+```toml
+# Strings
+font_family = "SF Mono"
+
+# Integers
+font_size = 10
+
+# Booleans
+enabled = true
+
+# Arrays
+mode_exit_keys = ["Escape", "q"]
+
+# Colors (hex with alpha)
+background_color_light = "#F200CFCF"  # AARRGGBB format
+```
+
+### Tables (Sections)
+
+```toml
+# Top-level section
+[hints]
+enabled = true
+
+# Nested section
+[hints.ui]
+font_size = 10
+```
+
+### Array of Tables
+
+```toml
+# Multiple app-specific configurations
+[[hints.app_configs]]
+bundle_id = "com.google.Chrome"
+additional_clickable_roles = ["AXTabGroup"]
+
+[[hints.app_configs]]
+bundle_id = "com.apple.Safari"
+mouse_action_refresh_delay = 1000
+```
+
+### Comments
+
+```toml
+# This is a comment
+enabled = true  # Inline comment
+```
+
+## Color Format
+
+Colors use hex notation with optional alpha transparency:
+
+| Format      | Example       | Description                        |
+| ----------- | ------------- | ---------------------------------- |
+| `#AARRGGBB` | `#FF000000`   | 8-char: Alpha + RGB (recommended)  |
+| `#RRGGBB`   | `#FF0000`     | 6-char: RGB only (fully opaque)    |
+| `#RGB`      | `#F00`        | 3-char shorthand                   |
+
+### Alpha Channel Reference
+
+| Opacity | Alpha | Hex Value |
+| ------- | ----- | --------- |
+| 100%    | 255   | `FF`      |
+| 95%     | 242   | `F2`      |
+| 90%     | 230   | `E6`      |
+| 80%     | 204   | `CC`      |
+| 70%     | 179   | `B3`      |
+| 60%     | 153   | `99`      |
+| 50%     | 128   | `80`      |
+| 40%     | 102   | `66`      |
+| 30%     | 77    | `4D`      |
+| 20%     | 51    | `33`      |
+| 10%     | 26    | `1A`      |
+
+### Theme-Aware Colors
+
+Neru supports separate colors for Light and Dark Mode:
+
+```toml
+[hints.ui]
+background_color_light = "#F200CFCF"  # Cyan in Light Mode
+background_color_dark = "#F2007A9E"   # Teal in Dark Mode
+```
+
+<Info>
+When set to empty string `""`, Neru uses built-in theme-aware defaults that adapt to system appearance.
+</Info>
+
+## Validation and Errors
+
+Neru validates your configuration on startup. Common validation errors:
+
+### Missing Required Fields
+
+```toml
+[general]
+mode_exit_keys = []  # ERROR: cannot be empty
+```
+
+<Warning>
+`general.mode_exit_keys` must contain at least one key.
+</Warning>
+
+### Invalid Values
+
+```toml
+[hints.ui]
+font_size = -10  # ERROR: must be >= 1
+```
+
+### Key Conflicts
+
+```toml
+[hints]
+hint_characters = "asdfghjkl"
+mode_exit_keys = ["a"]  # ERROR: conflicts with hint_characters
+```
+
+### Invalid Colors
+
+```toml
+[hints.ui]
+background_color_light = "invalid"  # ERROR: not a valid hex color
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Hotkeys" icon="keyboard" href="/configuration/hotkeys">
+    Configure global hotkeys and keyboard shortcuts
+  </Card>
+  <Card title="Modes" icon="grid" href="/configuration/modes">
+    Customize navigation modes and behavior
+  </Card>
+  <Card title="Appearance" icon="palette" href="/configuration/appearance">
+    Customize colors, fonts, and visual styling
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/commands">
+    View all available CLI commands
+  </Card>
+</CardGroup>
+
+## Example Configurations
+
+### Minimal Configuration
+
+Just the essentials:
+
+```toml
+[hotkeys]
+"Cmd+Shift+Space" = "hints --action left_click"
+
+[hints]
+enabled = true
+
+[general]
+mode_exit_keys = ["Escape"]
+```
+
+### Advanced Configuration
+
+With custom colors and per-app settings:
+
+```toml
+[general]
+excluded_apps = ["com.apple.Terminal"]
+passthrough_unbounded_keys = true
+
+[hotkeys]
+"Cmd+Shift+Space" = "hints --action left_click"
+"Cmd+Shift+G" = "grid --action left_click"
+"Cmd+Alt+T" = "exec open -a Terminal"
+
+[hints]
+enabled = true
+hint_characters = "asdfghjkl"
+include_menubar_hints = true
+
+[hints.ui]
+font_size = 12
+font_family = "SF Mono"
+background_color_light = "#F200CFCF"
+background_color_dark = "#F2007A9E"
+
+[[hints.app_configs]]
+bundle_id = "com.google.Chrome"
+additional_clickable_roles = ["AXTabGroup"]
+mouse_action_refresh_delay = 500
+
+[grid]
+enabled = true
+characters = "abcdefghijklmnpqrstuvwxyz"
+live_match_update = true
+```

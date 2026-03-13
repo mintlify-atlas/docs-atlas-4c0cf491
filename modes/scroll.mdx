@@ -1,0 +1,452 @@
+---
+title: Scroll Mode
+description: Vim-style keyboard scrolling for any application
+icon: arrows-up-down
+---
+
+## Overview
+
+Scroll Mode enables Vim-style keyboard scrolling anywhere on your screen. Navigate web pages, documents, and scrollable areas using familiar keybindings without touching your mouse or trackpad.
+
+<Note>
+  Scroll Mode works independently of the application — you can scroll in browsers, IDEs, PDFs, and any app with scrollable content.
+</Note>
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="Vim Keybindings" icon="keyboard">
+    Familiar `j`/`k`, `gg`/`G`, and `Ctrl+D`/`Ctrl+U` bindings for instant productivity.
+  </Card>
+  
+  <Card title="Universal Compatibility" icon="globe">
+    Works in any application with scrollable content — no app-specific configuration required.
+  </Card>
+  
+  <Card title="Fully Customizable" icon="sliders">
+    Remap all scroll keys, adjust scroll distances, and configure multi-key sequences.
+  </Card>
+  
+  <Card title="Sequence Support" icon="list-ol">
+    Execute multi-key sequences like `gg` (jump to top) with configurable timeout.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+Scroll Mode intercepts keyboard input and translates keystrokes into scroll events at the current cursor position. Move your cursor to any scrollable area, activate Scroll Mode, and use keyboard shortcuts to navigate.
+
+```
+Document Scrolling         After pressing 'j' (down)    After pressing 'gg' (top)
+┌──────────────────┐       ┌──────────────────┐         ┌──────────────────┐
+│ Line 1           │       │ Line 5           │         │ Line 1           │
+│ Line 2           │       │ Line 6           │         │ Line 2           │
+│ Line 3    ← 👆   │  →    │ Line 7    ← 👆   │    →    │ Line 3    ← 👆   │
+│ Line 4           │       │ Line 8           │         │ Line 4           │
+│ Line 5           │       │ Line 9           │         │ Line 5           │
+└──────────────────┘       └──────────────────┘         └──────────────────┘
+```
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Position Your Cursor">
+    Move your mouse cursor to the scrollable area (e.g., browser window, document, terminal).
+    
+    <Tip>
+      Use [Grid Mode](/modes/grid) or [Recursive Grid Mode](/modes/recursive-grid) to quickly position your cursor on the scrollable region.
+    </Tip>
+  </Step>
+  
+  <Step title="Activate Scroll Mode">
+    Press the global hotkey (default: `Cmd+Shift+S`) or run:
+    
+    ```bash
+    neru scroll
+    ```
+  </Step>
+  
+  <Step title="Scroll with Keyboard">
+    Use Vim-style keys to navigate:
+    
+    ```bash
+    j         # Scroll down
+    k         # Scroll up
+    Ctrl+D    # Half-page down
+    Ctrl+U    # Half-page up
+    gg        # Jump to top
+    Shift+G   # Jump to bottom
+    ```
+  </Step>
+  
+  <Step title="Exit Scroll Mode">
+    Press `Esc` to exit and return to normal operation.
+  </Step>
+</Steps>
+
+---
+
+## Default Keybindings
+
+All scroll keybindings are fully customizable in your `config.toml`.
+
+### Basic Navigation
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `j` | Scroll Down | Scroll down by configured amount |
+| `k` | Scroll Up | Scroll up by configured amount |
+| `h` | Scroll Left | Scroll left (for horizontal scrolling) |
+| `l` | Scroll Right | Scroll right (for horizontal scrolling) |
+
+### Half-Page Scrolling
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Ctrl+D` | Half-Page Down | Scroll down by half the viewport height |
+| `Ctrl+U` | Half-Page Up | Scroll up by half the viewport height |
+
+### Jump Navigation
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `gg` | Jump to Top | Scroll to the beginning of the document |
+| `Shift+G` | Jump to Bottom | Scroll to the end of the document |
+
+<Note>
+  `gg` is a **two-key sequence**: press `g` twice in quick succession. The timeout is configurable.
+</Note>
+
+### Control Keys
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Esc` | Exit | Exit scroll mode |
+
+---
+
+## Usage Patterns
+
+<Tabs>
+  <Tab title="Web Browsing">
+    **Scenario**: Scroll through a long article in your browser.
+    
+    ```bash
+    # Position cursor on browser window
+    Cmd+Shift+C  # Recursive Grid Mode
+    # Navigate to browser area
+    
+    # Activate scroll mode
+    Cmd+Shift+S
+    
+    # Scroll down the page
+    j, j, j
+    
+    # Jump to bottom to read comments
+    Shift+G
+    
+    # Jump back to top
+    gg
+    
+    # Exit scroll mode
+    Esc
+    ```
+  </Tab>
+  
+  <Tab title="Code Review">
+    **Scenario**: Navigate a long source file in your IDE.
+    
+    ```bash
+    # Activate scroll mode (cursor already in editor)
+    Cmd+Shift+S
+    
+    # Scroll down to review code
+    Ctrl+D  # Half-page down
+    Ctrl+D  # Half-page down again
+    
+    # Scroll up to re-read a section
+    Ctrl+U
+    
+    # Jump to bottom to see recent changes
+    Shift+G
+    
+    # Exit
+    Esc
+    ```
+  </Tab>
+  
+  <Tab title="PDF Navigation">
+    **Scenario**: Read a PDF document using keyboard scrolling.
+    
+    ```bash
+    # Activate scroll mode
+    Cmd+Shift+S
+    
+    # Scroll down page by page
+    j, j, j
+    
+    # Jump to end to check references
+    Shift+G
+    
+    # Return to top
+    gg
+    
+    # Exit
+    Esc
+    ```
+  </Tab>
+  
+  <Tab title="CLI Activation">
+    **Scenario**: Automate scroll mode activation via script.
+    
+    ```bash
+    # Start scroll mode programmatically
+    neru scroll
+    
+    # User navigates with keyboard
+    # Script continues after user exits mode
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Configuration
+
+Scroll Mode is configured in the `[scroll]` section of your `config.toml`.
+
+### Enable/Disable
+
+```toml
+[scroll]
+enabled = true
+```
+
+### Key Bindings
+
+Define custom keybindings for scroll actions. Each action can have **multiple keys** and supports **modifiers** and **sequences**.
+
+```toml
+[scroll.key_bindings]
+scroll_down = ["j", "Down"]              # Multiple keys for same action
+scroll_up = ["k", "Up"]
+scroll_left = ["h", "Left"]
+scroll_right = ["l", "Right"]
+half_page_down = ["Ctrl+d"]
+half_page_up = ["Ctrl+u"]
+jump_top = ["gg"]                         # Two-key sequence
+jump_bottom = ["Shift+g", "G"]           # Capital G (Shift+g)
+```
+
+<Tip>
+  You can assign multiple keys to the same action for flexibility (e.g., both `j` and `Down` arrow for scrolling down).
+</Tip>
+
+### Scroll Amounts
+
+Customize scroll distances for each action:
+
+```toml
+[scroll]
+small_scroll_amount = 50       # Pixels for j/k/h/l
+half_page_scroll_factor = 0.5  # Fraction of viewport height for Ctrl+D/U
+```
+
+### Sequence Timeout
+
+Configure timeout for multi-key sequences like `gg`:
+
+```toml
+[scroll]
+sequence_timeout_ms = 500  # Time window to complete sequence (milliseconds)
+```
+
+<Note>
+  If the second key in a sequence isn't pressed within the timeout, the first key is treated as a standalone action (if configured).
+</Note>
+
+---
+
+## Advanced: Custom Keybindings
+
+### Modifier Keys
+
+Use modifier keys in your bindings:
+
+```toml
+[scroll.key_bindings]
+half_page_down = ["Ctrl+d", "Cmd+d"]   # Ctrl+D or Cmd+D
+half_page_up = ["Ctrl+u", "Cmd+u"]
+jump_bottom = ["Shift+g"]              # Capital G
+```
+
+### Multi-Key Sequences
+
+Define sequences by concatenating keys:
+
+```toml
+[scroll.key_bindings]
+jump_top = ["gg"]          # Press 'g' twice
+jump_to_line = ["gl"]      # Custom sequence
+```
+
+<Warning>
+  Sequences must be completed within `sequence_timeout_ms`. If the timeout expires, the first key is processed as a single-key action (if defined).
+</Warning>
+
+### Arrow Key Alternatives
+
+Map arrow keys alongside Vim keys:
+
+```toml
+[scroll.key_bindings]
+scroll_down = ["j", "Down"]
+scroll_up = ["k", "Up"]
+scroll_left = ["h", "Left"]
+scroll_right = ["l", "Right"]
+```
+
+---
+
+## Tips & Best Practices
+
+<Tip>
+  **Position cursor before activating**: Scroll Mode scrolls at the cursor's current location. Use Grid or Recursive Grid Mode to quickly position your cursor on the target window.
+</Tip>
+
+<Note>
+  **Half-page scrolling is relative**: `Ctrl+D` and `Ctrl+U` scroll by a fraction of the viewport height, making them adaptive to different window sizes.
+</Note>
+
+<Tip>
+  **Combine with other modes**: Use Scroll Mode after navigating with Hints or Grid Mode for a fully keyboard-driven workflow.
+</Tip>
+
+### Workflow Optimization
+
+1. **Navigate then Scroll**: Use Grid Mode → position cursor → activate Scroll Mode
+2. **Use Sequences for Speed**: Master `gg` and `Shift+G` for instant top/bottom jumps
+3. **Customize for Your Workflow**: If you prefer different keys (e.g., `d`/`u` for down/up), configure `key_bindings` accordingly
+
+---
+
+## CLI Reference
+
+### Activate Mode
+
+```bash
+neru scroll
+```
+
+### Check Status
+
+```bash
+neru status
+# Mode: scroll
+```
+
+---
+
+## Troubleshooting
+
+### Scroll Not Working
+
+**Symptom**: Hotkey pressed but scrolling doesn't happen.
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify Mode is Enabled">
+    Check your `config.toml`:
+    
+    ```toml
+    [scroll]
+    enabled = true
+    ```
+  </Step>
+  
+  <Step title="Check Cursor Position">
+    Ensure your cursor is positioned over a scrollable area. Move it to the target window before activating Scroll Mode.
+  </Step>
+  
+  <Step title="Verify Keybindings">
+    Check that `[scroll.key_bindings]` is correctly configured:
+    
+    ```bash
+    neru config dump | grep -A 20 "\[scroll"
+    ```
+  </Step>
+  
+  <Step title="Reload Configuration">
+    ```bash
+    neru config reload
+    ```
+  </Step>
+</Steps>
+
+### Scroll Direction Reversed
+
+**Symptom**: Pressing `j` scrolls up instead of down (or vice versa).
+
+**Cause**: macOS "Natural Scrolling" setting may invert scroll directions.
+
+**Solution**: Either:
+- Disable Natural Scrolling in System Settings → Trackpad → Scroll & Zoom
+- Swap keybindings in your `config.toml`:
+
+```toml
+[scroll.key_bindings]
+scroll_down = ["k"]  # Reversed
+scroll_up = ["j"]
+```
+
+### Sequence Not Triggering
+
+**Symptom**: `gg` doesn't jump to top.
+
+**Check**:
+- Verify `sequence_timeout_ms` is large enough (default 500ms)
+- Ensure both keys are pressed within the timeout
+- Check logs for sequence processing:
+
+```bash
+tail -f ~/Library/Logs/neru/app.log | grep sequence
+```
+
+### Scroll Amount Too Small/Large
+
+**Problem**: Scrolling feels too slow or too fast.
+
+**Solution**: Adjust scroll amounts in configuration:
+
+```toml
+[scroll]
+small_scroll_amount = 100      # Increase for faster scrolling
+half_page_scroll_factor = 0.75 # Increase for larger half-page jumps
+```
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Recursive Grid Mode" icon="grid-2" href="/modes/recursive-grid">
+    Position your cursor precisely before scrolling
+  </Card>
+  
+  <Card title="Grid Mode" icon="table-cells" href="/modes/grid">
+    Quick cursor positioning for scroll activation
+  </Card>
+  
+  <Card title="Configuration Reference" icon="gear" href="/configuration">
+    Complete guide to customizing Neru
+  </Card>
+  
+  <Card title="CLI Usage" icon="terminal" href="/cli">
+    Command-line interface and scripting
+  </Card>
+</CardGroup>

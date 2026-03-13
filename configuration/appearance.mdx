@@ -1,0 +1,483 @@
+---
+title: Appearance
+description: Customize colors, fonts, and visual styling for overlays
+icon: palette
+---
+
+Neru supports extensive visual customization with theme-aware colors, custom fonts, and adjustable layouts.
+
+## Theme-Aware Colors
+
+Neru automatically adapts to macOS Light and Dark Mode:
+
+```toml
+[hints.ui]
+background_color_light = "#F200CFCF"  # Cyan in Light Mode
+background_color_dark = "#F2007A9E"   # Teal in Dark Mode
+text_color_light = "#FF003554"        # Dark blue text
+text_color_dark = "#FFFFFFFF"         # White text
+```
+
+<Info>
+When set to empty string `""`, Neru uses built-in defaults that adapt to system theme automatically.
+</Info>
+
+### Color Format
+
+Colors use hex notation with alpha channel:
+
+| Format      | Example       | Description                        |
+| ----------- | ------------- | ---------------------------------- |
+| `#AARRGGBB` | `#FF000000`   | 8-char: Alpha + RGB (recommended)  |
+| `#RRGGBB`   | `#FF0000`     | 6-char: RGB only (fully opaque)    |
+| `#RGB`      | `#F00`        | 3-char shorthand                   |
+
+**Breakdown of `#AARRGGBB`:**
+
+- **AA** - Alpha (transparency): `00` = invisible, `FF` = opaque
+- **RR** - Red component: `00` to `FF`
+- **GG** - Green component: `00` to `FF`
+- **BB** - Blue component: `00` to `FF`
+
+### Alpha Channel Reference
+
+| Opacity | Alpha Value | Hex  | Use Case                    |
+| ------- | ----------- | ---- | --------------------------- |
+| 100%    | 255         | `FF` | Solid colors, high contrast |
+| 95%     | 242         | `F2` | Slight transparency         |
+| 90%     | 230         | `E6` | Moderate transparency       |
+| 80%     | 204         | `CC` | Noticeable transparency     |
+| 70%     | 179         | `B3` | Semi-transparent            |
+| 60%     | 153         | `99` | More transparent            |
+| 50%     | 128         | `80` | Half transparent            |
+| 40%     | 102         | `66` | Low visibility              |
+| 30%     | 77          | `4D` | Subtle highlights           |
+| 20%     | 51          | `33` | Very subtle                 |
+| 10%     | 26          | `1A` | Barely visible              |
+
+### Calculate Alpha
+
+Formula: `round(opacity × 255)`
+
+```bash
+# 70% opacity
+0.7 × 255 = 178.5 → 179 → 0xB3
+
+# 95% opacity
+0.95 × 255 = 242.25 → 242 → 0xF2
+```
+
+## Hints Mode Appearance
+
+Customize hint label styling:
+
+```toml
+[hints.ui]
+font_size = 10
+font_family = ""                          # Empty = system font
+border_radius = -1                        # -1 = auto pill shape
+padding_x = -1                            # -1 = auto
+padding_y = -1                            # -1 = auto
+border_width = 1
+
+# Light Mode colors
+background_color_light = "#F200CFCF"      # Cyan background
+text_color_light = "#FF003554"            # Dark blue text
+matched_text_color_light = "#FFAAEEFF"    # Light blue for typed chars
+border_color_light = "#FF008A8A"          # Cyan border
+
+# Dark Mode colors
+background_color_dark = "#F2007A9E"       # Teal background
+text_color_dark = "#FFFFFFFF"             # White text
+matched_text_color_dark = "#FF003554"     # Dark blue for typed chars
+border_color_dark = "#FF00B4D8"           # Light blue border
+```
+
+<ParamField path="font_size" type="integer" default="10">
+  Label font size in points (range: 6-72).
+</ParamField>
+
+<ParamField path="font_family" type="string" default="">
+  Font name. Empty string uses system font with bold weight.
+  
+  Examples: `"SF Mono"`, `"Menlo"`, `"JetBrains Mono"`
+</ParamField>
+
+<ParamField path="border_radius" type="integer" default="-1">
+  Border radius in pixels. `-1` uses automatic pill shape based on font size.
+</ParamField>
+
+<ParamField path="padding_x" type="integer" default="-1">
+  Horizontal padding in pixels. `-1` uses automatic sizing based on font size.
+</ParamField>
+
+<ParamField path="padding_y" type="integer" default="-1">
+  Vertical padding in pixels. `-1` uses automatic sizing based on font size.
+</ParamField>
+
+<ParamField path="border_width" type="integer" default="1">
+  Border width in pixels (minimum 0). Set to `0` to disable border.
+</ParamField>
+
+### Color Properties
+
+<ParamField path="background_color_light" type="string" default="#F200CFCF">
+  Label background for Light Mode (theme-aware).
+</ParamField>
+
+<ParamField path="background_color_dark" type="string" default="#F2007A9E">
+  Label background for Dark Mode (theme-aware).
+</ParamField>
+
+<ParamField path="text_color_light" type="string" default="#FF003554">
+  Untyped label text for Light Mode.
+</ParamField>
+
+<ParamField path="text_color_dark" type="string" default="#FFFFFFFF">
+  Untyped label text for Dark Mode.
+</ParamField>
+
+<ParamField path="matched_text_color_light" type="string" default="#FFAAEEFF">
+  Typed character color for Light Mode (visual feedback).
+</ParamField>
+
+<ParamField path="matched_text_color_dark" type="string" default="#FF003554">
+  Typed character color for Dark Mode (visual feedback).
+</ParamField>
+
+## Grid Mode Appearance
+
+Customize grid cell styling:
+
+```toml
+[grid.ui]
+font_size = 10
+font_family = ""
+border_width = 1
+
+# Unmatched cells
+background_color_light = "#9900B4D8"      # Semi-transparent blue
+background_color_dark = "#99003554"       # Semi-transparent dark
+text_color_light = "#FF003554"            # Dark blue text
+text_color_dark = "#FFB3E8F5"             # Light blue text
+border_color_light = "#9900B4D8"
+border_color_dark = "#99003554"
+
+# Matched cells (as you type)
+matched_background_color_light = "#B300CFCF"  # Brighter cyan
+matched_background_color_dark = "#B300B4D8"   # Brighter blue
+matched_text_color_light = "#FFAAEEFF"        # Light blue
+matched_text_color_dark = "#FFFFFFFF"         # White
+matched_border_color_light = "#B300CFCF"
+matched_border_color_dark = "#B300B4D8"
+```
+
+### Matched vs Unmatched
+
+- **Unmatched colors** - Default cell appearance
+- **Matched colors** - Cells that match typed input (provides visual feedback)
+
+## Recursive Grid Appearance
+
+Customize recursive grid lines and cells:
+
+```toml
+[recursive_grid.ui]
+font_size = 10
+font_family = ""
+
+# Grid lines
+line_color_light = "#FF007A9E"            # Teal lines
+line_color_dark = "#FF00CFCF"             # Cyan lines
+line_width = 1
+
+# Cell highlight (selected region)
+highlight_color_light = "#4D007A9E"       # Semi-transparent teal
+highlight_color_dark = "#4D00CFCF"        # Semi-transparent cyan
+
+# Cell labels
+text_color_light = "#FF007A9E"            # Teal text
+text_color_dark = "#FF00CFCF"             # Cyan text
+
+# Label backgrounds (optional)
+label_background = false                  # Enable rounded backgrounds
+label_background_color_light = "#FFAAEEFF"
+label_background_color_dark = "#FF003554"
+label_background_padding_x = -1           # -1 = auto
+label_background_padding_y = -1           # -1 = auto
+label_background_border_radius = -1       # -1 = auto
+label_background_border_width = 1
+
+# Sub-key preview (miniature key grid in each cell)
+sub_key_preview = false
+sub_key_preview_font_size = 8
+sub_key_preview_autohide_multiplier = 1.5 # Hide when cell too small
+sub_key_preview_text_color_light = "#66007A9E"  # 40% opacity
+sub_key_preview_text_color_dark = "#6600CFCF"   # 40% opacity
+```
+
+<ParamField path="line_width" type="integer" default="1">
+  Grid line thickness in pixels (minimum 0).
+</ParamField>
+
+<ParamField path="label_background" type="boolean" default="false">
+  Add rounded badge backgrounds behind cell labels for better visibility.
+</ParamField>
+
+<ParamField path="sub_key_preview" type="boolean" default="false">
+  Draw miniature key grid inside each cell showing which key maps to which region.
+  
+  Helpful for learning key layouts or using non-default grid dimensions.
+</ParamField>
+
+<ParamField path="sub_key_preview_autohide_multiplier" type="float" default="1.5">
+  Hide preview when cell size < (font size × multiplier). Set to `0` to never hide.
+</ParamField>
+
+## Mode Indicator Appearance
+
+Customize the mode indicator label:
+
+```toml
+[mode_indicator.ui]
+font_size = 10
+font_family = ""
+border_width = 1
+padding_x = -1                            # -1 = auto
+padding_y = -1                            # -1 = auto
+border_radius = -1                        # -1 = auto pill
+indicator_x_offset = 20                   # Pixels from cursor
+indicator_y_offset = 20                   # Pixels from cursor
+
+# Shared colors (all modes)
+background_color_light = "#F200CFCF"
+background_color_dark = "#F200CFCF"
+text_color_light = "#FF003554"
+text_color_dark = "#FF003554"
+border_color_light = "#FF007A9E"
+border_color_dark = "#FF007A9E"
+```
+
+### Per-Mode Color Overrides
+
+Override colors for specific modes:
+
+```toml
+[mode_indicator.hints]
+enabled = true
+text = "Hints"
+background_color_light = "#F2FF6B6B"      # Red for hints
+background_color_dark = "#F2CC3333"
+
+[mode_indicator.grid]
+enabled = true
+text = "Grid"
+background_color_light = "#F200CFCF"      # Cyan for grid
+background_color_dark = "#F2007A9E"
+```
+
+<Info>
+Empty string `""` inherits from `[mode_indicator.ui]` section.
+</Info>
+
+## Font Configuration
+
+### System Font (Default)
+
+Leave `font_family` empty to use system font:
+
+```toml
+[hints.ui]
+font_family = ""  # Uses system font with appropriate weight
+```
+
+- **Hints**: Bold system font
+- **Grid/Scroll**: Regular system font
+
+### Custom Fonts
+
+Specify font by family name or PostScript name:
+
+<CodeGroup>
+```toml Family Name (Recommended)
+[hints.ui]
+font_family = "SF Mono"
+font_family = "JetBrains Mono"
+font_family = "Fira Code"
+```
+
+```toml PostScript Name
+[hints.ui]
+font_family = "SFMono-Bold"
+font_family = "Menlo-Regular"
+font_family = "CourierNew-Bold"
+```
+</CodeGroup>
+
+### Finding Available Fonts
+
+macOS:
+
+```bash
+# List all font families
+system_profiler SPFontsDataType | grep "Family:"
+
+# Or use Font Book
+open -a "Font Book"
+```
+
+### Font Resolution Order
+
+1. **PostScript name** (exact match)
+2. **Family name** (looser matching)
+3. **Fallback** to system font
+
+<Info>
+Family names (e.g., "SF Mono") are more portable than PostScript names.
+</Info>
+
+## Complete Appearance Examples
+
+### High Contrast Theme
+
+Maximum visibility:
+
+```toml
+[hints.ui]
+font_size = 12
+font_family = "SF Mono"
+border_width = 2
+
+background_color_light = "#FF000000"      # Solid black
+text_color_light = "#FFFFFFFF"            # White text
+matched_text_color_light = "#FFFFFF00"    # Yellow highlight
+border_color_light = "#FFFF0000"          # Red border
+
+background_color_dark = "#FFFFFFFF"       # Solid white
+text_color_dark = "#FF000000"             # Black text
+matched_text_color_dark = "#FFFF0000"     # Red highlight
+border_color_dark = "#FF000000"           # Black border
+```
+
+### Subtle Transparency
+
+Minimal visual interference:
+
+```toml
+[hints.ui]
+font_size = 10
+font_family = ""
+border_width = 0                          # No border
+
+background_color_light = "#CC00CFCF"      # 80% opacity
+text_color_light = "#FF003554"
+matched_text_color_light = "#FFAAEEFF"
+
+background_color_dark = "#CC007A9E"       # 80% opacity
+text_color_dark = "#FFFFFFFF"
+matched_text_color_dark = "#FF003554"
+```
+
+### Monochrome Theme
+
+Grayscale aesthetic:
+
+```toml
+[hints.ui]
+font_size = 10
+font_family = "Menlo"
+
+background_color_light = "#F2CCCCCC"      # Light gray
+text_color_light = "#FF000000"            # Black
+matched_text_color_light = "#FF666666"    # Dark gray
+border_color_light = "#FF999999"          # Medium gray
+
+background_color_dark = "#F2333333"       # Dark gray
+text_color_dark = "#FFFFFFFF"             # White
+matched_text_color_dark = "#FFCCCCCC"     # Light gray
+border_color_dark = "#FF666666"           # Medium gray
+```
+
+### Colorful Theme
+
+Vibrant rainbow colors:
+
+```toml
+# Hints - Purple
+[hints.ui]
+background_color_light = "#F29B59B6"
+text_color_light = "#FFFFFFFF"
+matched_text_color_light = "#FFFFFF00"
+
+# Grid - Orange
+[grid.ui]
+background_color_light = "#99E67E22"
+text_color_light = "#FFFFFFFF"
+matched_background_color_light = "#B3F39C12"
+
+# Recursive Grid - Green
+[recursive_grid.ui]
+line_color_light = "#FF27AE60"
+highlight_color_light = "#4D27AE60"
+text_color_light = "#FF27AE60"
+```
+
+## Smooth Cursor
+
+Animate cursor movement for visual tracking:
+
+```toml
+[smooth_cursor]
+move_mouse_enabled = false                # Disabled by default
+steps = 10                                # Animation steps
+delay = 1                                 # Milliseconds between steps
+```
+
+<ParamField path="move_mouse_enabled" type="boolean" default="false">
+  Enable smooth cursor movement animation.
+</ParamField>
+
+<ParamField path="steps" type="integer" default="10">
+  Number of intermediate positions in animation (minimum 1).
+  
+  - Higher = smoother but slower
+  - Lower = faster but choppier
+</ParamField>
+
+<ParamField path="delay" type="integer" default="1">
+  Milliseconds between animation steps (minimum 0).
+</ParamField>
+
+### Animation Profiles
+
+<CodeGroup>
+```toml Smooth & Slow
+[smooth_cursor]
+move_mouse_enabled = true
+steps = 20
+delay = 5
+```
+
+```toml Fast & Responsive
+[smooth_cursor]
+move_mouse_enabled = true
+steps = 5
+delay = 1
+```
+
+```toml Instant (Default)
+[smooth_cursor]
+move_mouse_enabled = false
+```
+</CodeGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Modes Configuration" icon="grid" href="/configuration/modes">
+    Configure navigation mode behavior
+  </Card>
+  <Card title="Hotkeys" icon="keyboard" href="/configuration/hotkeys">
+    Set up global keyboard shortcuts
+  </Card>
+</CardGroup>

@@ -1,0 +1,445 @@
+---
+title: Grid Mode
+description: Coordinate-based navigation with row and column labels
+icon: table-cells
+---
+
+## Overview
+
+Grid Mode divides your screen into a coordinate grid with row and column labels, allowing you to click anywhere by typing a two-character coordinate (e.g., "ab", "cd").
+
+<Note>
+  Grid Mode is ideal for quick, coarse navigation when you need to reach large UI elements or general screen regions without pixel-perfect precision.
+</Note>
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="Fast Navigation" icon="bolt">
+    Reach any screen region with just 2-3 keystrokes using row and column labels.
+  </Card>
+  
+  <Card title="No Accessibility Required" icon="universal-access">
+    Works independently of the accessibility tree — compatible with all applications.
+  </Card>
+  
+  <Card title="Sublayer Refinement" icon="magnifying-glass">
+    Automatically shows a 3x3 subgrid within selected cells for precise positioning.
+  </Card>
+  
+  <Card title="Visual Labels" icon="tags">
+    Clear row and column labels overlay the screen for easy coordinate identification.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+When activated, Grid Mode overlays labeled rows and columns on your screen. Type a row label followed by a column label to select that cell. Neru then shows a 3x3 subgrid within the cell for precise positioning.
+
+```
+Screen Grid (5x5 example)     After typing "b" (row)      After typing "bc" (cell)
+     a  b  c  d  e                   a  b  c  d  e                ┌───┬───┬───┐
+   ┌──┬──┬──┬──┬──┐                ┌──┬──┬──┬──┬──┐              │ a │ s │ d │
+a  │  │  │  │  │  │             a  │  │██│  │  │  │              ├───┼───┼───┤
+   ├──┼──┼──┼──┼──┤                ├──┼██┼──┼──┼──┤              │ f │ g │ h │
+b  │  │  │  │  │  │  →          b  │  │██│  │  │  │  →          ├───┼───┼───┤
+   ├──┼──┼──┼──┼──┤                ├──┼██┼──┼──┼──┤              │ j │ k │ l │
+c  │  │  │  │  │  │             c  │  │██│  │  │  │              └───┴───┴───┘
+   └──┴──┴──┴──┴──┘                └──┴──┴──┴──┴──┘              (3x3 subgrid)
+```
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Activate Grid Mode">
+    Press the global hotkey (default: `Cmd+Shift+G`) or run:
+    
+    ```bash
+    neru grid
+    ```
+    
+    The screen will be overlaid with row and column labels.
+  </Step>
+  
+  <Step title="Type Row Label">
+    Press the key corresponding to your target row (e.g., `b` for second row).
+    
+    The grid will highlight all cells in that row.
+  </Step>
+  
+  <Step title="Type Column Label">
+    Press the key corresponding to your target column (e.g., `c` for third column).
+    
+    A 3x3 subgrid appears within the selected cell, and the cursor moves to its center.
+  </Step>
+  
+  <Step title="Refine Position (Optional)">
+    Type a subgrid key (e.g., `a` for top-left corner) to refine cursor position within the cell.
+  </Step>
+  
+  <Step title="Perform Action">
+    Use direct action keys to click or interact:
+    
+    ```bash
+    Shift+L       # Left click
+    Shift+R       # Right click
+    ```
+    
+    The mode exits automatically if configured in `auto_exit_actions`.
+  </Step>
+</Steps>
+
+---
+
+## Default Keybindings
+
+All keybindings are customizable in your `config.toml`.
+
+### Grid Labels
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Row Labels | `asdfghjkl` | Characters used for row labels |
+| Column Labels | `asdfghjkl` | Characters used for column labels |
+| Sublayer Keys | `asdfghjkl` | Characters used for 3x3 subgrid |
+
+<Note>
+  By default, both row and column labels use the same character set. You can customize them independently in configuration.
+</Note>
+
+### Control Keys
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Backspace` | Reset Input | Clear typed coordinates and restart selection |
+| `Space` | Reset | Return to initial grid state |
+| `Esc` | Exit | Exit grid mode |
+
+---
+
+## Usage Patterns
+
+<Tabs>
+  <Tab title="Quick Click">
+    **Scenario**: Click a button in the middle of the screen.
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+G
+    
+    # Type grid coordinate (row 'c', column 'd')
+    cd
+    
+    # Optionally refine with subgrid key
+    g  # Center of subgrid
+    
+    # Click
+    Shift+L
+    ```
+  </Tab>
+  
+  <Tab title="Corner Navigation">
+    **Scenario**: Click an element in the top-left corner of the screen.
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+G
+    
+    # Type coordinate for top-left cell
+    aa
+    
+    # Refine to top-left of subgrid
+    a
+    
+    # Click
+    Shift+L
+    ```
+  </Tab>
+  
+  <Tab title="CLI with Action">
+    **Scenario**: Automate a right-click via script.
+    
+    ```bash
+    # Activate with pending action
+    neru grid --action right_click
+    
+    # Type grid coordinate
+    # After typing the final subgrid key, right-click executes automatically
+    ```
+    
+    <Warning>
+      The `--action` flag executes at the final sublayer selection. For most workflows, configure `auto_exit_actions` instead.
+    </Warning>
+  </Tab>
+  
+  <Tab title="Correction Workflow">
+    **Scenario**: Mistype a coordinate and start over.
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+G
+    
+    # Oops, typed wrong row
+    a
+    
+    # Press backspace to clear and restart
+    Backspace
+    
+    # Type correct coordinate
+    cd
+    
+    # Click
+    Shift+L
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Configuration
+
+Grid Mode is configured in the `[grid]` section of your `config.toml`.
+
+### Basic Settings
+
+```toml
+[grid]
+enabled = true
+characters = "asdfghjkl"    # Characters for row and column labels
+row_labels = ""             # Override row labels (empty = use characters)
+col_labels = ""             # Override column labels (empty = use characters)
+sublayer_keys = ""          # Keys for 3x3 subgrid (empty = use characters)
+```
+
+<Tip>
+  If `row_labels`, `col_labels`, or `sublayer_keys` are empty, they inherit from `characters`. If `characters` is also empty, Neru falls back to `hints.hint_characters`.
+</Tip>
+
+### Grid Behavior
+
+```toml
+[grid]
+hide_unmatched = true       # Hide non-matching cells as you type
+reset_key = "space"         # Reset to initial grid state
+backspace_key = "backspace" # Clear input and restart
+```
+
+### Auto-Exit Actions
+
+```toml
+[grid]
+auto_exit_actions = [
+  "left_click",
+  "right_click",
+  "middle_click",
+  "double_click"
+]
+```
+
+---
+
+## Visual Customization
+
+Customize overlay appearance in `[grid.overlay]`:
+
+```toml
+[grid.overlay]
+# Grid lines
+line_color = "#3B82F6"
+line_width = 2.0
+
+# Cell labels
+label_background_color = "#1E293B"
+label_text_color = "#F1F5F9"
+label_font_size = 20.0
+label_padding = 6.0
+label_corner_radius = 4.0
+
+# Subgrid styling
+subgrid_line_color = "#10B981"
+subgrid_line_width = 1.5
+```
+
+---
+
+## Subgrid Navigation
+
+After selecting a cell by typing row + column labels, Grid Mode automatically shows a **3x3 subgrid** for precise positioning within that cell.
+
+### Subgrid Layout
+
+The subgrid divides the selected cell into 9 regions:
+
+```
+┌───┬───┬───┐
+│ a │ s │ d │  ← Top row (keys: a, s, d)
+├───┼───┼───┤
+│ f │ g │ h │  ← Middle row (keys: f, g, h)
+├───┼───┼───┤
+│ j │ k │ l │  ← Bottom row (keys: j, k, l)
+└───┴───┴───┘
+```
+
+<Note>
+  The subgrid keys default to the first 9 characters of `characters` or `sublayer_keys`. Customize in configuration.
+</Note>
+
+### Exiting Subgrid
+
+Press `Backspace` to exit the subgrid and return to the main grid view:
+
+```bash
+# In subgrid mode
+Backspace  # Returns to main grid, clears input
+```
+
+---
+
+## Tips & Best Practices
+
+<Tip>
+  **Use home-row keys**: The default `asdfghjkl` characters minimize finger movement for faster navigation.
+</Tip>
+
+<Note>
+  **Hide unmatched cells**: Enable `hide_unmatched = true` to reduce visual clutter as you type coordinates.
+</Note>
+
+<Warning>
+  **Grid size limits**: Very large screens may have more cells than available characters. Consider using fewer, larger cells or switch to Recursive Grid Mode for better scalability.
+</Warning>
+
+### Workflow Optimization
+
+1. **Combine with Actions**: Configure `auto_exit_actions` to automatically exit after clicks
+2. **Use Subgrid Strategically**: For coarse targets, skip the subgrid and click immediately after selecting a cell
+3. **Customize Characters**: If you prefer different key layouts (e.g., `qwerty` instead of home-row), configure `characters` accordingly
+
+---
+
+## CLI Reference
+
+### Activate Mode
+
+```bash
+neru grid
+```
+
+### Activate with Pending Action
+
+```bash
+neru grid --action left_click
+neru grid --action right_click
+```
+
+<Note>
+  The `--action` flag executes after the final sublayer selection. Use `auto_exit_actions` for more flexible workflows.
+</Note>
+
+### Check Status
+
+```bash
+neru status
+# Mode: grid
+```
+
+---
+
+## Troubleshooting
+
+### Grid Not Appearing
+
+**Symptom**: Hotkey pressed but no grid overlay shows.
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify Mode is Enabled">
+    Check your `config.toml`:
+    
+    ```toml
+    [grid]
+    enabled = true
+    ```
+  </Step>
+  
+  <Step title="Check Accessibility Permissions">
+    Ensure Neru has Accessibility permission in System Settings → Privacy & Security → Accessibility.
+  </Step>
+  
+  <Step title="Reload Configuration">
+    ```bash
+    neru config reload
+    ```
+  </Step>
+</Steps>
+
+### Labels Not Visible
+
+**Symptom**: Grid appears but labels are missing or unreadable.
+
+**Check**:
+- Verify `label_text_color` contrasts with screen content
+- Increase `label_font_size` in `[grid.overlay]`
+- Ensure `label_background_color` provides sufficient contrast
+
+### Subgrid Not Showing
+
+**Symptom**: After typing row+column, subgrid doesn't appear.
+
+**Verify**:
+- You've typed both row and column labels (2 characters minimum)
+- `sublayer_keys` is not empty in configuration
+- Check logs for errors: `tail -f ~/Library/Logs/neru/app.log`
+
+### Wrong Cell Selected
+
+**Problem**: Typed coordinate doesn't match expected cell.
+
+**Solution**:
+- Press `Backspace` to clear input
+- Verify row and column label order in overlay
+- Ensure `row_labels` and `col_labels` are configured correctly
+
+---
+
+## Comparison: Grid vs Recursive Grid
+
+| Feature | Grid Mode | Recursive Grid Mode |
+|---------|-----------|---------------------|
+| **Navigation Style** | Row + Column coordinates | Recursive subdivision |
+| **Precision** | Cell + 3x3 subgrid | Unlimited depth (up to `max_depth`) |
+| **Speed** | 2-3 keystrokes | Variable (2-10+ keystrokes) |
+| **Complexity** | Fixed grid layout | Dynamic subdivision |
+| **Best For** | Quick clicks on large elements | Pixel-perfect positioning |
+| **Scalability** | Limited by character set | Scales to any resolution |
+
+<Tip>
+  Use **Grid Mode** for speed when clicking large buttons or menu items. Use **Recursive Grid Mode** for precision when targeting small UI elements or specific pixels.
+</Tip>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Recursive Grid Mode" icon="grid-2" href="/modes/recursive-grid">
+    Precision navigation with recursive subdivision
+  </Card>
+  
+  <Card title="Hints Mode" icon="hand-pointer" href="/modes/hints">
+    Accessibility-based navigation with labeled elements
+  </Card>
+  
+  <Card title="Configuration Reference" icon="gear" href="/configuration">
+    Complete guide to customizing Neru
+  </Card>
+  
+  <Card title="CLI Usage" icon="terminal" href="/cli">
+    Command-line interface and scripting
+  </Card>
+</CardGroup>

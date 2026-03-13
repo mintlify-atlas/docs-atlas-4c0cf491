@@ -1,0 +1,156 @@
+---
+title: Introduction
+description: Mouse-free OS navigation - Navigate and click without touching your mouse
+---
+
+<div style={{
+  background: 'linear-gradient(135deg, #94cb04 0%, #545454 100%)',
+  borderRadius: '8px',
+  padding: '48px 24px',
+  textAlign: 'center',
+  marginBottom: '32px'
+}}>
+  <h1 style={{
+    fontSize: '48px',
+    fontWeight: '700',
+    color: '#ffffff',
+    marginBottom: '16px',
+    fontFamily: 'Inter'
+  }}>練る · Neru</h1>
+  <p style={{
+    fontSize: '18px',
+    color: '#ffffff',
+    marginBottom: '24px',
+    fontFamily: 'Inter'
+  }}>Keyboard-driven navigation for macOS</p>
+  <p style={{
+    fontSize: '14px',
+    color: '#e6e6e6',
+    fontFamily: 'Inter'
+  }}>Free, open-source, endlessly customizable</p>
+</div>
+
+## What is Neru?
+
+**Neru (練る)** — Japanese for *"to refine and master through practice"* — lets you navigate, click, and scroll anywhere on your screen using only your keyboard. No mouse. No trackpad. No limits.
+
+It's the free, open-source alternative to [Homerow](https://www.homerow.app/), [Mouseless](https://mouseless.click/), and [Wooshy](https://wooshy.app) — with zero paywalls, zero subscriptions, and everything configurable down to the last pixel.
+
+<CardGroup cols={3}>
+  <Card title="Recursive Grid" icon="grid" href="/modes/recursive-grid">
+    Precise coordinate-based navigation with recursive subdivision
+  </Card>
+  <Card title="Grid Mode" icon="table-cells" href="/modes/grid">
+    Quick coarse navigation with coordinate system
+  </Card>
+  <Card title="Hints Mode" icon="hand-pointer" href="/modes/hints">
+    Accessibility-driven clickable element labels
+  </Card>
+</CardGroup>
+
+## Key Features
+
+<CardGroup cols={2}>
+  <Card title="3 Navigation Modes" icon="compass">
+    Choose between Recursive Grid (recommended), Grid, and Hints modes for precise navigation in any app
+  </Card>
+  <Card title="Direct Mouse Actions" icon="mouse-pointer">
+    Trigger left click, right click, double click, middle click, and drag & drop via keybindings
+  </Card>
+  <Card title="Vim-Style Scrolling" icon="scroll">
+    Scroll anywhere with familiar `j`/`k`, `gg`/`G`, and `Ctrl+D`/`Ctrl+U` bindings
+  </Card>
+  <Card title="CLI & Scripting" icon="terminal">
+    Full IPC-based CLI for programmatic control and automation workflows
+  </Card>
+  <Card title="Per-App Exclusions" icon="ban">
+    Disable Neru in specific apps where you don't need it
+  </Card>
+  <Card title="Cross-Platform Architecture" icon="laptop-code">
+    Hexagonal design supporting macOS (stable), Linux & Windows (in progress)
+  </Card>
+</CardGroup>
+
+## Works Everywhere
+
+Neru works seamlessly across all major macOS applications:
+
+| Category | Apps |
+| --- | --- |
+| **Native macOS** | Finder, Safari, Mail, System Settings, Terminal |
+| **Electron** | VS Code, Cursor, Slack, Spotify, Obsidian, Discord |
+| **Browsers** | Chrome, Firefox, Safari, Arc, Brave, Zen |
+| **Creative** | Figma, Adobe Illustrator, Photoshop |
+| **System UI** | Menubar, Dock, Mission Control, Notification Center |
+
+<Note>
+Grid mode works universally. Hints mode works where the accessibility tree is exposed. See the [App Compatibility](/advanced/app-compatibility) guide for details.
+</Note>
+
+## Why Neru?
+
+<AccordionGroup>
+  <Accordion title="Free & Open Source">
+    Unlike paid alternatives (Homerow, Mouseless, Wooshy), Neru is completely free with no paywalls or subscriptions. MIT licensed.
+  </Accordion>
+  
+  <Accordion title="Endlessly Customizable">
+    Configure everything through a single TOML file: keybindings, colors, behaviors. Version-control your config in dotfiles.
+  </Accordion>
+  
+  <Accordion title="Cross-Platform Ready">
+    Built with hexagonal architecture from day one. macOS is stable, Linux & Windows support in progress.
+  </Accordion>
+  
+  <Accordion title="Active Development">
+    Unlike discontinued alternatives (Shortcat) or unmaintained projects (Vimac), Neru is actively maintained.
+  </Accordion>
+</AccordionGroup>
+
+## Quick Start
+
+Get up and running in under 2 minutes:
+
+<Steps>
+  <Step title="Install via Homebrew">
+    ```bash
+    brew tap y3owk1n/tap
+    brew install --cask y3owk1n/tap/neru
+    ```
+  </Step>
+  
+  <Step title="Grant Accessibility Permission">
+    Open **System Settings → Privacy & Security → Accessibility** and enable **Neru**
+  </Step>
+  
+  <Step title="Launch Neru">
+    ```bash
+    open -a Neru
+    ```
+  </Step>
+  
+  <Step title="Try Navigation">
+    Press `Cmd+Shift+C` for Recursive Grid mode, or `Cmd+Shift+Space` for Hints mode
+  </Step>
+</Steps>
+
+<Card title="Full Installation Guide" icon="rocket" href="/installation">
+  See detailed installation instructions for Homebrew, Nix, and building from source
+</Card>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Installation Guide" icon="download" href="/installation">
+    Complete installation instructions for all platforms
+  </Card>
+  <Card title="Quickstart Tutorial" icon="play" href="/quickstart">
+    Get started with your first navigation mode
+  </Card>
+  <Card title="Configuration" icon="gear" href="/configuration/overview">
+    Customize hotkeys, modes, and appearance
+  </Card>
+  <Card title="CLI Reference" icon="terminal" href="/cli/commands">
+    Full command-line interface documentation
+  </Card>
+</CardGroup>

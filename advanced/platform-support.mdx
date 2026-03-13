@@ -1,0 +1,285 @@
+---
+title: Platform Support
+description: Cross-platform compatibility and implementation status
+---
+
+Neru is architected from the ground up to be cross-platform, using a **Hexagonal Architecture (Ports and Adapters)** that isolates OS-specific logic from core business rules.
+
+## Current Status
+
+<CardGroup cols={3}>
+  <Card title="macOS" icon="apple">
+    **100% Compatible**
+    
+    All features are fully functional and stable.
+  </Card>
+  <Card title="Linux" icon="linux">
+    **Foundations Ready**
+    
+    Infrastructure in place, implementations needed.
+  </Card>
+  <Card title="Windows" icon="windows">
+    **Foundations Ready**
+    
+    Infrastructure in place, implementations needed.
+  </Card>
+</CardGroup>
+
+<Warning>
+Linux and Windows support requires community contribution. The interfaces are defined, but native implementations for accessibility, event capture, and overlays need to be built.
+</Warning>
+
+## Compatibility Matrix
+
+| Capability                    | macOS | Linux | Windows |
+| :---------------------------- | :---: | :---: | :-----: |
+| **Recursive Grid Mode**       |  ✅   |  🔲   |   🔲    |
+| **Grid Mode**                 |  ✅   |  🔲   |   🔲    |
+| **Hints Mode**                |  ✅   |  🔲   |   🔲    |
+| **Vim-Style Scrolling**       |  ✅   |  🔲   |   🔲    |
+| **Direct Mouse Actions**      |  ✅   |  🔲   |   🔲    |
+| **Global Hotkeys**            |  ✅   |  🔲   |   🔲    |
+| **Accessibility Integration** |  ✅   |  🔲   |   🔲    |
+| **Native Overlays**           |  ✅   |  🔲   |   🔲    |
+
+> ✅ = Fully Supported | 🔲 = Contributor Needed (Stub Implementation)
+
+## macOS Support
+
+### System Requirements
+
+- **macOS Version**: 10.15 (Catalina) or later
+- **Architecture**: Intel x86_64, Apple Silicon (ARM64)
+- **Permissions**: Accessibility permissions required
+
+### Platform Features
+
+<CardGroup cols={2}>
+  <Card title="Accessibility API" icon="universal-access">
+    Uses `AXUIElement` to query UI hierarchies and perform actions (click, focus).
+  </Card>
+  <Card title="Event Tap" icon="keyboard">
+    Uses `CGEventTap` for global keyboard interception with minimal latency.
+  </Card>
+  <Card title="Native Hotkeys" icon="command">
+    System-level global hotkey registration with conflict detection.
+  </Card>
+  <Card title="Cocoa Overlays" icon="window-restore">
+    Native Cocoa windows managed via Objective-C bridge for GPU-accelerated rendering.
+  </Card>
+</CardGroup>
+
+### macOS-Specific Implementation
+
+```
+internal/core/infra/platform/darwin/
+├── accessibility_element_darwin.m    # AX element queries
+├── accessibility_screen_darwin.m     # Screen coordinate conversion
+├── eventtap_darwin.m                 # Keyboard event interception
+├── overlay_darwin.m                  # Native window rendering
+├── system.go                         # System info, dark mode detection
+└── bridge.go                         # CGo bridge layer
+```
+
+### Coordinate System
+
+Neru uses a **global top-left (0,0) coordinate system** for all shared logic. macOS Cocoa APIs use a bottom-left (0,0) coordinate system where Y increases upwards. The darwin platform adapter automatically inverts the Y coordinate before passing it to shared Go code.
+
+## Linux Support (In Progress)
+
+### Planned Implementation
+
+<CardGroup cols={2}>
+  <Card title="AT-SPI" icon="universal-access">
+    **Accessibility Protocol**
+    
+    Linux desktop accessibility integration via AT-SPI (Assistive Technology Service Provider Interface).
+  </Card>
+  <Card title="X11/Wayland" icon="desktop">
+    **Event Capture**
+    
+    Global keyboard and mouse event capture for both X11 and Wayland display servers.
+  </Card>
+  <Card title="GTK/Qt" icon="window-restore">
+    **Native Overlays**
+    
+    Cross-desktop overlay rendering using GTK or Qt frameworks.
+  </Card>
+  <Card title="systemd" icon="gears">
+    **Service Management**
+    
+    Background daemon management via systemd user services.
+  </Card>
+</CardGroup>
+
+### Linux Stub Status
+
+| Component              | Status            | Implementation Path                             |
+| ---------------------- | ----------------- | ----------------------------------------------- |
+| Screen bounds / cursor | 🔲 Stub           | `internal/core/infra/platform/linux/system.go`   |
+| Global hotkeys         | 🔲 Stub           | `internal/core/infra/hotkeys/manager_linux.go`   |
+| Keyboard event tap     | 🔲 Stub           | `internal/core/infra/eventtap/eventtap_linux.go` |
+| Accessibility (AT-SPI) | 🔲 Stub           | `internal/core/infra/accessibility/`             |
+| UI overlays            | 🔲 Stub           | `internal/app/components/*/overlay_linux.go`     |
+| App watcher            | 🔲 Stub           | `internal/core/infra/appwatcher/platform_linux.go` |
+| Dark mode detection    | 🔲 Stub           | `internal/core/infra/platform/linux/system.go`   |
+
+### Application Identifiers
+
+On Linux, the "bundle ID" equivalent is typically a **Desktop ID** (e.g., `firefox.desktop`) or **executable name** (e.g., `firefox`).
+
+## Windows Support (In Progress)
+
+### Planned Implementation
+
+<CardGroup cols={2}>
+  <Card title="UI Automation" icon="universal-access">
+    **Microsoft UIA**
+    
+    Windows accessibility integration via UI Automation (UIA) API.
+  </Card>
+  <Card title="Windows Hooks" icon="keyboard">
+    **Event Capture**
+    
+    Low-level keyboard and mouse hooks for global event interception.
+  </Card>
+  <Card title="Win32/WinUI" icon="window-restore">
+    **Native Overlays**
+    
+    Overlay windows using Win32 API or modern WinUI framework.
+  </Card>
+  <Card title="Windows Services" icon="gears">
+    **Service Management**
+    
+    Background service registration and management via Windows Service Control Manager.
+  </Card>
+</CardGroup>
+
+### Windows Stub Status
+
+| Component              | Status            | Implementation Path                               |
+| ---------------------- | ----------------- | ------------------------------------------------- |
+| Screen bounds / cursor | 🔲 Stub           | `internal/core/infra/platform/windows/system.go`   |
+| Global hotkeys         | 🔲 Stub           | `internal/core/infra/hotkeys/manager_windows.go`   |
+| Keyboard event tap     | 🔲 Stub           | `internal/core/infra/eventtap/eventtap_windows.go` |
+| Accessibility (UIA)    | 🔲 Stub           | `internal/core/infra/accessibility/`               |
+| UI overlays            | 🔲 Stub           | `internal/app/components/*/overlay_windows.go`     |
+| App watcher            | 🔲 Stub           | `internal/core/infra/appwatcher/platform_windows.go` |
+| Config directories     | ✅ Implemented    | Uses `AppData/Roaming`                             |
+
+### Application Identifiers
+
+On Windows, the "bundle ID" equivalent is typically an **AppUserModelID** (e.g., `Microsoft.Edge`) or **executable name** (e.g., `msedge.exe`).
+
+## Cross-Platform Architecture
+
+### The "One Rule"
+
+<Warning>
+**Non-darwin-tagged code must never import `internal/core/infra/platform/darwin`.**
+
+This is enforced by `golangci-lint` using `depguard` to ensure platform isolation.
+</Warning>
+
+### Design Principles
+
+1. **Shared Business Logic**: All core logic (hint generation, grid calculations, mode transitions) is written in pure Go and resides in `internal/core/domain` and `internal/app/services`.
+
+2. **Platform Isolation**: OS-specific code is strictly isolated. Non-darwin code must never import macOS-specific packages.
+
+3. **Ports and Adapters**: System capabilities (Accessibility, Hotkeys, Overlays) are defined as interfaces (Ports) in `internal/core/ports`. Concrete implementations (Adapters) reside in `internal/core/infra`.
+
+4. **Build Tag Separation**: OS-specific files use Go build tags (e.g., `//go:build darwin`) to ensure they are only compiled for the target platform.
+
+### Port Interfaces
+
+All platform-specific capabilities are abstracted behind port interfaces:
+
+```go
+// internal/core/ports/system.go
+type SystemPort interface {
+    GetMainScreenBounds() (Rect, error)
+    GetCursorPosition() (Point, error)
+    IsDarkMode() (bool, error)
+    // ...
+}
+
+// internal/core/ports/accessibility.go
+type AccessibilityPort interface {
+    GetClickableElements() ([]Element, error)
+    ClickElement(element Element) error
+    // ...
+}
+```
+
+### Platform Factory
+
+The platform factory pattern ensures clean separation:
+
+```
+internal/core/infra/platform/
+├── factory.go              # Interface definition
+├── factory_darwin.go       # macOS implementation
+├── factory_linux.go        # Linux stub
+└── factory_windows.go      # Windows stub
+```
+
+## Roadmap
+
+Our goal is to make Neru the definitive keyboard-driven navigation tool for all major desktop platforms.
+
+### Phase 1: macOS Refinement (Current)
+
+- [x] Stable core architecture
+- [x] High-performance native macOS bridge
+- [x] Comprehensive feature set
+- [x] Production-ready release
+
+### Phase 2: Linux Expansion
+
+- [ ] AT-SPI accessibility integration
+- [ ] X11 event capture
+- [ ] Wayland event capture
+- [ ] Native Linux overlays (GTK/Qt)
+- [ ] systemd service integration
+- [ ] Desktop environment detection
+
+### Phase 3: Windows Expansion
+
+- [ ] UI Automation (UIA) integration
+- [ ] Windows Hooks for event capture
+- [ ] Win32/WinUI overlays
+- [ ] Windows Service integration
+- [ ] High-DPI awareness
+
+## Contributing to Platform Support
+
+**Looking for cross-platform tasks?** Check issues labeled [`cross-platform`](https://github.com/y3owk1n/neru/issues?q=is%3Aopen+is%3Aissue+label%3Across-platform) or join our [Linux Support Discussion](https://github.com/y3owk1n/neru/discussions/559).
+
+### How to Add a Feature
+
+1. **Find the right adapter**: Locate the platform-specific implementation file (e.g., `internal/core/infra/platform/linux/system.go`).
+
+2. **Replace the stub**: Most unimplemented methods return `derrors.CodeNotSupported`. Replace with a real implementation.
+
+3. **Add tests**: Unit tests go next to the implementation. Integration tests use build tags like `//go:build integration && linux`.
+
+4. **Run CI locally**:
+   ```bash
+   just lint
+   just vet
+   just test
+   just build
+   ```
+
+See the [Architecture Documentation](https://github.com/y3owk1n/neru/blob/main/docs/ARCHITECTURE.md) for detailed contributor guidelines.
+
+## Error Handling
+
+When a platform-specific feature is not yet implemented, the adapter returns an error with the `CodeNotSupported` code:
+
+```go
+return derrors.New(derrors.CodeNotSupported, "feature X not yet implemented on linux")
+```
+
+Callers in the service layer use the `IsNotSupported(err)` helper to handle missing features gracefully (e.g., by logging a warning instead of returning an error to the user).

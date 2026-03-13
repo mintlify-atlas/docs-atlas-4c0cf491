@@ -1,0 +1,384 @@
+---
+title: Hotkeys
+description: Configure global hotkeys to trigger Neru navigation modes
+icon: keyboard
+---
+
+Global hotkeys allow you to activate Neru navigation modes from anywhere without using the CLI.
+
+## Basic Configuration
+
+Hotkeys are configured in the `[hotkeys]` section:
+
+```toml
+[hotkeys]
+"Cmd+Shift+Space" = "hints"
+"Cmd+Shift+G" = "grid"
+"Cmd+Shift+C" = "recursive_grid"
+"Cmd+Shift+S" = "scroll"
+```
+
+<Warning>
+Defining **any** custom hotkey replaces **ALL** defaults. You must explicitly define every hotkey you want.
+</Warning>
+
+## Hotkey Syntax
+
+### Modifiers
+
+Supported modifiers (case-insensitive):
+
+- **`Cmd`** - Command key (macOS)
+- **`Ctrl`** - Control key
+- **`Alt`** / **`Option`** - Alt/Option key
+- **`Shift`** - Shift key
+
+### Format
+
+```toml
+"Modifier1+Modifier2+Key" = "action"
+```
+
+### Examples
+
+```toml
+[hotkeys]
+# Single modifier
+"Cmd+Space" = "hints"
+
+# Multiple modifiers
+"Cmd+Shift+Space" = "hints"
+"Ctrl+Alt+G" = "grid"
+
+# Different key combinations
+"Cmd+H" = "hints"
+"Alt+F" = "grid"
+```
+
+## Action Types
+
+### Neru Commands
+
+Activate navigation modes:
+
+```toml
+[hotkeys]
+"Cmd+Shift+Space" = "hints"
+"Cmd+Shift+G" = "grid"
+"Cmd+Shift+C" = "recursive_grid"
+"Cmd+Shift+S" = "scroll"
+```
+
+### Commands with Actions
+
+Combine modes with automatic actions:
+
+```toml
+[hotkeys]
+# Auto-click after selecting hint
+"Cmd+Shift+Space" = "hints --action left_click"
+
+# Auto-click after selecting grid cell
+"Cmd+Shift+G" = "grid --action left_click"
+
+# Right-click mode
+"Cmd+Shift+R" = "hints --action right_click"
+```
+
+Available actions:
+- `left_click` - Click immediately after selection
+- `right_click` - Right-click after selection
+- `middle_click` - Middle-click after selection
+
+### Shell Commands
+
+Execute arbitrary shell commands with the `exec` prefix:
+
+```toml
+[hotkeys]
+# Open Terminal
+"Cmd+Alt+T" = "exec open -a Terminal"
+
+# Open specific application
+"Cmd+Alt+C" = "exec open -a 'Visual Studio Code'"
+
+# Run custom script
+"Cmd+Alt+S" = "exec ~/scripts/screenshot.sh"
+
+# Show notification (macOS)
+"Cmd+Alt+N" = "exec osascript -e 'display notification \"Hello!\" with title \"Neru\"'"
+
+# Lock screen (macOS)
+"Cmd+Alt+L" = "exec pmset displaysleepnow"
+```
+
+<Info>
+Shell commands run in your default shell environment. Use absolute paths for reliability.
+</Info>
+
+## Common Configurations
+
+### Minimal Setup
+
+Enable only what you need:
+
+```toml
+[hotkeys]
+"Cmd+Shift+Space" = "hints"
+```
+
+### Recommended Setup
+
+With auto-click for faster workflow:
+
+```toml
+[hotkeys]
+"Cmd+Shift+Space" = "hints --action left_click"
+"Cmd+Shift+G" = "grid --action left_click"
+"Cmd+Shift+C" = "recursive_grid --action left_click"
+"Cmd+Shift+S" = "scroll"
+```
+
+### Vim-Style Hotkeys
+
+For Vim users:
+
+```toml
+[hotkeys]
+"Ctrl+F" = "hints"
+"Ctrl+G" = "grid"
+"Ctrl+S" = "scroll"
+```
+
+### Multiple Actions
+
+Different hotkeys for different actions:
+
+```toml
+[hotkeys]
+# Left-click mode
+"Cmd+Shift+Space" = "hints --action left_click"
+
+# Right-click mode
+"Cmd+Shift+R" = "hints --action right_click"
+
+# Move without clicking
+"Cmd+Shift+M" = "hints"
+
+# Grid modes
+"Cmd+Shift+G" = "grid --action left_click"
+"Cmd+Shift+C" = "recursive_grid --action left_click"
+```
+
+### Application Launchers
+
+Quick access to frequently used apps:
+
+```toml
+[hotkeys]
+# Navigation modes
+"Cmd+Shift+Space" = "hints --action left_click"
+"Cmd+Shift+G" = "grid"
+
+# Application launchers
+"Cmd+Alt+T" = "exec open -a Terminal"
+"Cmd+Alt+B" = "exec open -a Safari"
+"Cmd+Alt+C" = "exec open -a 'Visual Studio Code'"
+"Cmd+Alt+S" = "exec open -a Slack"
+"Cmd+Alt+M" = "exec open -a Mail"
+```
+
+## Advanced Techniques
+
+### System Actions
+
+macOS system control:
+
+```toml
+[hotkeys]
+# Lock screen
+"Cmd+Alt+L" = "exec pmset displaysleepnow"
+
+# Sleep
+"Cmd+Alt+S" = "exec pmset sleepnow"
+
+# Screenshot
+"Cmd+Alt+P" = "exec screencapture -i ~/Desktop/screenshot.png"
+
+# Volume control
+"Cmd+Alt+Up" = "exec osascript -e 'set volume output volume (output volume of (get volume settings) + 10)'"
+"Cmd+Alt+Down" = "exec osascript -e 'set volume output volume (output volume of (get volume settings) - 10)'"
+```
+
+### Clipboard Actions
+
+```toml
+[hotkeys]
+# Copy current date
+"Cmd+Alt+D" = "exec date | pbcopy"
+
+# Paste from clipboard history
+"Cmd+Alt+V" = "exec pbpaste"
+```
+
+### Workspace Automation
+
+```toml
+[hotkeys]
+# Open project directory
+"Cmd+Alt+P" = "exec open ~/Projects"
+
+# Run build script
+"Cmd+Alt+B" = "exec ~/scripts/build.sh"
+
+# Git status notification
+"Cmd+Alt+G" = "exec cd ~/Projects/myapp && git status | head -5"
+```
+
+## Alternative: External Hotkey Managers
+
+For more complex hotkey setups, use dedicated tools:
+
+### skhd (Simple Hotkey Daemon)
+
+[skhd](https://github.com/koekeishiya/skhd) provides advanced hotkey management:
+
+```bash
+# ~/.config/skhd/skhdrc
+ctrl - f : neru hints
+ctrl - g : neru grid
+ctrl - r : neru hints --action right_click
+ctrl - s : neru scroll
+
+# Mode-specific actions
+ctrl + shift - h : neru hints --action left_click
+ctrl + shift - g : neru grid --action left_click
+```
+
+### Karabiner-Elements
+
+[Karabiner-Elements](https://karabiner-elements.pqrs.org/) for complex key remapping:
+
+```json
+{
+  "description": "Neru hotkeys",
+  "manipulators": [
+    {
+      "from": {
+        "key_code": "spacebar",
+        "modifiers": {
+          "mandatory": ["command", "shift"]
+        }
+      },
+      "to": [
+        {
+          "shell_command": "neru hints --action left_click"
+        }
+      ],
+      "type": "basic"
+    }
+  ]
+}
+```
+
+### Benefits of External Managers
+
+- **Modal hotkeys** - Different hotkeys in different contexts
+- **Chained commands** - Execute multiple commands in sequence
+- **Conditional execution** - Based on active application
+- **Advanced modifiers** - Hyper key, simultaneous keys
+- **Visual feedback** - On-screen notifications
+
+## Keyboard Layout Considerations
+
+Neru uses a reference keyboard layout for consistent hotkey behavior:
+
+### Automatic Layout Detection
+
+Neru auto-selects the first available layout:
+
+1. **macOS**: `com.apple.keylayout.ABC`, `com.apple.keylayout.US`, or any English layout
+2. **Linux**: (Planned) `us`, `abc`, or current layout
+3. **Windows**: (Planned) `en-US` or current layout
+
+### Force Specific Layout
+
+Override automatic detection:
+
+```toml
+[general]
+kb_layout_to_use = "com.apple.keylayout.ABC"
+```
+
+Find available layouts on macOS:
+
+```bash
+defaults read com.apple.HIToolbox AppleEnabledInputSources
+```
+
+### Multi-Language Support
+
+This ensures hotkeys work consistently even when switching input sources (e.g., EN ↔ RU).
+
+## Troubleshooting
+
+### Hotkey Not Working
+
+1. **Check for conflicts** - System or app-level shortcuts may override
+2. **Verify syntax** - Ensure proper modifier and key names
+3. **Check permissions** - Accessibility permissions required
+4. **Test with different key** - Some keys may be reserved
+
+### Finding Bundle IDs
+
+For `exec` commands:
+
+```bash
+# Find app bundle ID
+osascript -e 'id of app "Safari"'
+# Output: com.apple.Safari
+
+# List all running apps
+osascript -e 'tell application "System Events" to get bundle identifier of every application process'
+```
+
+### Debugging Shell Commands
+
+Test commands before adding to config:
+
+```bash
+# Test command directly
+open -a Terminal
+
+# Test with neru exec
+neru exec "open -a Terminal"
+
+# Check logs
+neru logs
+```
+
+## Default Hotkeys Reference
+
+If no `[hotkeys]` section is defined, these defaults are used:
+
+| Hotkey              | Action          | Description                  |
+| ------------------- | --------------- | ---------------------------- |
+| `Cmd+Shift+Space`   | `hints`         | Activate hint mode           |
+| `Cmd+Shift+G`       | `grid`          | Activate grid mode           |
+| `Cmd+Shift+C`       | `recursive_grid`| Activate recursive grid mode |
+| `Cmd+Shift+S`       | `scroll`        | Activate scroll mode         |
+
+<Info>
+These defaults are only active if you don't define any custom hotkeys.
+</Info>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Modes Configuration" icon="grid" href="/configuration/modes">
+    Customize navigation mode behavior
+  </Card>
+  <Card title="Appearance" icon="palette" href="/configuration/appearance">
+    Customize visual styling and colors
+  </Card>
+</CardGroup>

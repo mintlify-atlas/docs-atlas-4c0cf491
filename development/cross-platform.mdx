@@ -1,0 +1,605 @@
+---
+title: Cross-Platform Support
+description: Building platform-specific implementations for macOS, Linux, and Windows
+---
+
+Neru is designed for cross-platform support through strict architectural boundaries. While macOS is the primary platform with full feature support, Linux and Windows implementations are in progress.
+
+## Platform Status
+
+Current implementation status across platforms:
+
+| Capability | macOS | Linux | Windows |
+|-----------|-------|-------|----------|
+| Screen bounds / cursor | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| Global hotkeys | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| Keyboard event tap | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| Accessibility API | ✅ Complete | 🔲 Stub (AT-SPI planned) | 🔲 Stub (UIA planned) |
+| UI overlays | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| App watcher | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| Dark mode detection | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| Notifications / alerts | ✅ Complete | 🔲 Stub | 🔲 Stub |
+| Config directories | ✅ Complete | ✅ Complete | ✅ Complete |
+
+<Note>
+🔲 = Stub returns `CodeNotSupported`. Contributors can replace stubs with real implementations.
+</Note>
+
+## Build Tags
+
+Go build tags ensure platform-specific code only compiles for its target platform:
+
+### Build Tag Syntax
+
+```go
+//go:build darwin
+
+package darwin
+
+// This file only compiles on macOS
+```
+
+```go
+//go:build linux
+
+package linux
+
+// This file only compiles on Linux
+```
+
+```go
+//go:build windows
+
+package windows
+
+// This file only compiles on Windows
+```
+
+### Negation Tags
+
+For stub implementations that apply to all non-darwin platforms:
+
+```go
+//go:build !darwin
+
+package hotkeys
+
+// This file compiles on Linux, Windows, etc. (everything except macOS)
+```
+
+### Multiple Constraints
+
+For integration tests that need a specific OS:
+
+```go
+//go:build integration && darwin
+
+package darwin_test
+
+// Only compiles when running integration tests on macOS
+```
+
+## Directory Structure
+
+```
+internal/core/infra/platform/
+├── factory.go              # Abstract factory (no build tag)
+├── factory_darwin.go       # macOS factory (//go:build darwin)
+├── factory_linux.go        # Linux factory (//go:build linux)
+├── factory_windows.go      # Windows factory (//go:build windows)
+├── factory_others.go       # Fallback for unsupported platforms
+├── darwin/                 # macOS implementations
+│   ├── system.go          # SystemPort for macOS
+│   ├── accessibility.go   # Accessibility bridge
+│   ├── overlay_darwin.m   # Objective-C overlay code
+│   └── ...                # Other macOS-specific files
+├── linux/                  # Linux implementations
+│   └── system.go          # SystemPort for Linux (mostly stubs)
+└── windows/                # Windows implementations
+    └── system.go          # SystemPort for Windows (mostly stubs)
+```
+
+## Platform-Specific Implementations
+
+### macOS (Primary Platform)
+
+Full feature implementation using native macOS APIs:
+
+<CardGroup cols={2}>
+  <Card title="Accessibility" icon="universal-access">
+    **AXUIElement API**
+    
+    Queries UI hierarchies and performs actions (click, focus)
+    
+    Files:
+    - `accessibility.go`
+    - `accessibility_element_darwin.m`
+    - `accessibility_screen_darwin.m`
+  </Card>
+
+  <Card title="Event Tap" icon="keyboard">
+    **CGEventTap API**
+    
+    Global keyboard interception and event filtering
+    
+    Files:
+    - `eventtap_darwin.m`
+    - `eventtap.h`
+  </Card>
+
+  <Card title="Overlays" icon="layer-group">
+    **Cocoa NSWindow**
+    
+    Native window overlays with GPU acceleration
+    
+    Files:
+    - `overlay_darwin.m`
+    - `overlay.h`
+  </Card>
+
+  <Card title="Hotkeys" icon="keyboard">
+    **Carbon Event Manager**
+    
+    Global hotkey registration and handling
+    
+    Files:
+    - `hotkeys_darwin.m`
+    - `hotkeys.h`
+  </Card>
+</CardGroup>
+
+#### CGo Bridge Pattern
+
+macOS implementations use CGo to call Objective-C:
+
+```go
+//go:build darwin
+
+package darwin
+
+/*
+#cgo CFLAGS: -x objective-c
+#cgo LDFLAGS: -framework Cocoa -framework ApplicationServices
+#include "accessibility.h"
+*/
+import "C"
+import "unsafe"
+
+func GetClickableElements() []Element {
+    // Call Objective-C function
+    cElements := C.GetClickableElements()
+    defer C.free(unsafe.Pointer(cElements))
+    
+    // Convert C data to Go
+    return convertCElementsToGo(cElements)
+}
+```
+
+### Linux (In Progress)
+
+Planned implementations using Linux APIs:
+
+<CardGroup cols={2}>
+  <Card title="Accessibility" icon="universal-access">
+    **AT-SPI (Assistive Technology Service Provider Interface)**
+    
+    D-Bus-based accessibility framework
+    
+    Status: Not yet implemented
+  </Card>
+
+  <Card title="Display" icon="display">
+    **X11 / Wayland**
+    
+    Screen bounds, cursor control, and overlays
+    
+    Status: Not yet implemented
+  </Card>
+
+  <Card title="Input" icon="keyboard">
+    **XTest / evdev**
+    
+    Global keyboard event capture
+    
+    Status: Not yet implemented
+  </Card>
+
+  <Card title="Hotkeys" icon="keyboard">
+    **X11 GrabKey / libinput**
+    
+    Global hotkey registration
+    
+    Status: Not yet implemented
+  </Card>
+</CardGroup>
+
+#### Example Stub Implementation
+
+```go
+package linux
+
+import (
+    "context"
+    "image"
+    derrors "github.com/y3owk1n/neru/internal/core/errors"
+)
+
+type SystemAdapter struct{}
+
+func NewSystemAdapter() *SystemAdapter {
+    return &SystemAdapter{}
+}
+
+// ScreenBounds is not yet implemented on Linux
+// TODO(linux): implement using XRandR or Wayland display protocol
+func (s *SystemAdapter) ScreenBounds(ctx context.Context) (image.Rectangle, error) {
+    return image.Rectangle{}, derrors.New(
+        derrors.CodeNotSupported,
+        "ScreenBounds not yet implemented on linux",
+    )
+}
+```
+
+### Windows (In Progress)
+
+Planned implementations using Windows APIs:
+
+<CardGroup cols={2}>
+  <Card title="Accessibility" icon="universal-access">
+    **UI Automation (UIA)**
+    
+    Windows accessibility framework
+    
+    Status: Not yet implemented
+  </Card>
+
+  <Card title="Display" icon="display">
+    **Win32 API**
+    
+    Screen bounds, cursor control
+    
+    Status: Not yet implemented
+  </Card>
+
+  <Card title="Input" icon="keyboard">
+    **Windows Hooks**
+    
+    Low-level keyboard hook (WH_KEYBOARD_LL)
+    
+    Status: Not yet implemented
+  </Card>
+
+  <Card title="Overlays" icon="layer-group">
+    **Layered Windows**
+    
+    Transparent overlay windows
+    
+    Status: Not yet implemented
+  </Card>
+</CardGroup>
+
+## Adding Platform Features
+
+### How to Implement a Feature for an Existing Platform
+
+#### Step 1: Find the Right Adapter
+
+Locate where the feature should be implemented:
+
+| Feature | Location |
+|---------|----------|
+| Screen bounds, cursor, dark mode | `internal/core/infra/platform/<os>/system.go` |
+| Global hotkeys | `internal/core/infra/hotkeys/manager_<os>.go` |
+| Keyboard event tap | `internal/core/infra/eventtap/eventtap_<os>.go` |
+| Application watcher | `internal/core/infra/appwatcher/platform_<os>.go` |
+| UI overlays | `internal/app/components/*/overlay_<os>.go` |
+
+#### Step 2: Replace the Stub
+
+Most unimplemented methods return:
+
+```go
+return derrors.New(derrors.CodeNotSupported, "X not yet implemented on linux")
+```
+
+Replace with a real implementation:
+
+```go
+// Before
+func (s *SystemAdapter) ScreenBounds(ctx context.Context) (image.Rectangle, error) {
+    return image.Rectangle{}, derrors.New(
+        derrors.CodeNotSupported,
+        "ScreenBounds not yet implemented on linux",
+    )
+}
+
+// After
+func (s *SystemAdapter) ScreenBounds(ctx context.Context) (image.Rectangle, error) {
+    // Actual implementation using XRandR
+    display := C.XOpenDisplay(nil)
+    if display == nil {
+        return image.Rectangle{}, errors.New("failed to open X display")
+    }
+    defer C.XCloseDisplay(display)
+    
+    screen := C.DefaultScreen(display)
+    width := C.DisplayWidth(display, screen)
+    height := C.DisplayHeight(display, screen)
+    
+    return image.Rect(0, 0, int(width), int(height)), nil
+}
+```
+
+#### Step 3: Add Tests
+
+Unit tests go next to the implementation:
+
+```go
+//go:build linux
+
+package linux
+
+import "testing"
+
+func TestScreenBounds(t *testing.T) {
+    adapter := NewSystemAdapter()
+    bounds, err := adapter.ScreenBounds(context.Background())
+    
+    if err != nil {
+        t.Fatalf("ScreenBounds failed: %v", err)
+    }
+    
+    if bounds.Dx() == 0 || bounds.Dy() == 0 {
+        t.Error("Screen bounds should not be zero")
+    }
+}
+```
+
+Integration tests use both build tags:
+
+```go
+//go:build integration && linux
+
+package linux_test
+
+func TestScreenBoundsIntegration(t *testing.T) {
+    // Tests that require a real X11 display
+}
+```
+
+#### Step 4: Run CI Locally
+
+Before submitting a PR:
+
+```bash
+# On the target OS:
+just lint
+just vet
+just test
+just build
+```
+
+### How to Add a New Platform-Specific Operation
+
+#### Option A: Add to SystemPort (Broadly Applicable)
+
+For features needed across the system:
+
+1. **Add to port interface:**
+
+```go
+// internal/core/ports/system.go
+
+type SystemPort interface {
+    // ... existing methods ...
+    
+    // NewFeature does something useful
+    NewFeature(ctx context.Context) error
+}
+```
+
+2. **Implement in macOS adapter:**
+
+```go
+//go:build darwin
+
+// internal/core/infra/platform/darwin/system.go
+
+func (s *SystemAdapter) NewFeature(ctx context.Context) error {
+    // Real implementation
+    return darwin.DoNewFeature()
+}
+```
+
+3. **Add stubs for other platforms:**
+
+```go
+// internal/core/infra/platform/linux/system.go
+
+func (s *SystemAdapter) NewFeature(ctx context.Context) error {
+    return derrors.New(derrors.CodeNotSupported, "NewFeature not yet implemented on linux")
+}
+```
+
+#### Option B: Dispatch Pair (Isolated Operations)
+
+For operations only needed in one package:
+
+1. **Create platform-specific file:**
+
+```go
+//go:build darwin
+
+// internal/core/infra/appwatcher/platform_darwin.go
+
+package appwatcher
+
+import "github.com/y3owk1n/neru/internal/core/infra/platform/darwin"
+
+func platformDoThing() error {
+    return darwin.DoThing()
+}
+```
+
+2. **Create stub file:**
+
+```go
+//go:build !darwin
+
+// internal/core/infra/appwatcher/platform_stub.go
+
+package appwatcher
+
+import derrors "github.com/y3owk1n/neru/internal/core/errors"
+
+func platformDoThing() error {
+    return derrors.New(derrors.CodeNotSupported, "not supported on this platform")
+}
+```
+
+3. **Call from shared code:**
+
+```go
+// internal/core/infra/appwatcher/watcher.go (no build tag)
+
+package appwatcher
+
+func (w *Watcher) DoSomething() error {
+    return platformDoThing()
+}
+```
+
+## Application Identifiers
+
+Each platform uses different terminology for application identifiers:
+
+| Platform | Term | Example |
+|----------|------|----------|
+| macOS | Bundle ID | `com.apple.Safari` |
+| Linux | Desktop ID / Executable | `firefox.desktop` or `firefox` |
+| Windows | AppUserModelID / Executable | `Microsoft.Edge` or `msedge.exe` |
+
+<Note>
+The `FocusedAppBundleID` method returns whatever the platform uses. The exclusion list in config (`general.excluded_apps`) should use the same format for the target platform.
+</Note>
+
+### Example Usage
+
+```go
+// Application code (platform-agnostic)
+bundleID, err := accessibilityPort.FocusedAppBundleID(ctx)
+if err != nil {
+    return err
+}
+
+// On macOS: bundleID = "com.apple.Safari"
+// On Linux: bundleID = "firefox.desktop"
+// On Windows: bundleID = "Microsoft.Edge"
+
+if isExcluded(bundleID) {
+    return errors.New("application is excluded")
+}
+```
+
+## CLI Layer Considerations
+
+### Service Management
+
+`internal/cli/services.go` uses `//go:build darwin` because it manages macOS launchd services.
+
+To add Linux service management:
+
+1. Create `internal/cli/services_linux.go` with `//go:build linux`
+2. Implement install/uninstall/start/stop using systemd
+3. Register subcommands in `init()` like the darwin version
+
+### App Bundle Detection
+
+`IsRunningFromAppBundle()` detects if Neru is running from a macOS `.app` bundle:
+
+```go
+//go:build darwin
+
+func isRunningFromAppBundle() bool {
+    execPath, _ := os.Executable()
+    return strings.Contains(execPath, ".app/Contents/MacOS")
+}
+```
+
+```go
+//go:build !darwin
+
+func isRunningFromAppBundle() bool {
+    return false // Not applicable on other platforms
+}
+```
+
+### Main Thread Locking
+
+macOS requires Cocoa calls on the main thread:
+
+```go
+//go:build darwin
+
+// cmd/neru/main_darwin.go
+
+func init() {
+    runtime.LockOSThread() // Required for Cocoa
+}
+```
+
+<Warning>
+Never add `LockOSThread()` to shared code - it degrades performance on other platforms!
+</Warning>
+
+## Coordinate System Differences
+
+Neru uses a **top-left origin** coordinate system internally:
+
+- **Origin**: (0,0) is the top-left corner
+- **Y-Axis**: Increases downwards
+
+### Platform Conversions
+
+**macOS**: Uses bottom-left origin. Adapters must convert:
+
+```go
+// internal/core/infra/platform/darwin/accessibility_screen_darwin.m
+
+CGFloat screenHeight = CGDisplayPixelsHigh(CGMainDisplayID());
+CGFloat convertedY = screenHeight - cocoaY;
+```
+
+**Linux/Windows**: Use top-left origin natively, no conversion needed.
+
+## Contributing Guidelines
+
+<CardGroup cols={2}>
+  <Card title="Follow the One Rule" icon="exclamation-triangle">
+    Never import `internal/core/infra/platform/darwin` from non-darwin code.
+  </Card>
+
+  <Card title="Use Build Tags" icon="tag">
+    All platform-specific files must have appropriate build tags.
+  </Card>
+
+  <Card title="Return CodeNotSupported" icon="circle-xmark">
+    Unimplemented features must return `derrors.CodeNotSupported`.
+  </Card>
+
+  <Card title="Test Your Code" icon="vial">
+    Add unit tests next to implementation files.
+  </Card>
+</CardGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture Overview" href="/development/architecture" icon="sitemap">
+    Understand the overall system design
+  </Card>
+
+  <Card title="Hexagonal Design" href="/development/hexagonal-design" icon="hexagon">
+    Learn about Ports and Adapters
+  </Card>
+</CardGroup>

@@ -1,0 +1,433 @@
+---
+title: Hints Mode
+description: Accessibility-driven navigation with labeled clickable elements
+icon: hand-pointer
+---
+
+## Overview
+
+Hints Mode uses macOS Accessibility APIs to identify clickable UI elements and overlays hint labels on them. Type the label to instantly navigate to and interact with that element.
+
+<Note>
+  Hints Mode provides the fastest navigation for accessible applications, but requires accessibility tree support. Some apps may need additional configuration.
+</Note>
+
+### Key Features
+
+<CardGroup cols={2}>
+  <Card title="Element-Aware" icon="bullseye">
+    Automatically detects buttons, links, and interactive elements using the accessibility tree.
+  </Card>
+  
+  <Card title="Instant Selection" icon="bolt">
+    Type a hint label (e.g., "AA", "AB") to immediately select and interact with that element.
+  </Card>
+  
+  <Card title="Smart Filtering" icon="filter">
+    As you type, hints that don't match are hidden, reducing visual clutter.
+  </Card>
+  
+  <Card title="Vimium-Style Workflow" icon="keyboard">
+    Familiar to users of browser extensions like Vimium or Vimari.
+  </Card>
+</CardGroup>
+
+---
+
+## How It Works
+
+When activated, Hints Mode queries the macOS Accessibility API for all clickable elements on the screen and assigns each a unique label. Type the label to select the element and perform an action (click by default).
+
+```
+Browser Window with Hints         After typing "A"
+┌────────────────────────────┐    ┌────────────────────────────┐
+│  [AA] Home  [AB] About     │    │  [AA] Home  [AB] About     │
+│  [AC] Contact              │    │  [AC] Contact              │
+│                            │    │                            │
+│  [AD] Sign In  [AE] Sign Up│    │  [AD] Sign In  [AE] Sign Up│
+└────────────────────────────┘    └────────────────────────────┘
+                                   (Only labels starting with 'A' remain)
+```
+
+---
+
+## Getting Started
+
+<Steps>
+  <Step title="Activate Hints Mode">
+    Press the global hotkey (default: `Cmd+Shift+Space`) or run:
+    
+    ```bash
+    neru hints
+    ```
+    
+    Hint labels appear on all clickable elements.
+  </Step>
+  
+  <Step title="Type the Hint Label">
+    Type the characters of the label for your target element (e.g., "AB").
+    
+    As you type, non-matching hints disappear.
+  </Step>
+  
+  <Step title="Complete the Selection">
+    When only one hint remains (or you've typed the full label), the cursor moves to that element and the configured action executes automatically.
+    
+    The mode exits immediately after the action.
+  </Step>
+</Steps>
+
+<Tip>
+  Hints Mode is particularly effective in browsers, where the accessibility tree is well-populated with clickable links and buttons.
+</Tip>
+
+---
+
+## Default Keybindings
+
+### Hint Characters
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Hint Characters | `asdfghjkl` | Characters used to generate hint labels |
+
+<Note>
+  Hint labels are generated using permutations of these characters (e.g., "AA", "AB", "AC", ...). Using home-row keys minimizes finger movement.
+</Note>
+
+### Control Keys
+
+| Key | Action | Description |
+|-----|--------|-------------|
+| `Backspace` | Remove Last Character | Undo the last typed character and show previously filtered hints |
+| `Esc` | Exit | Exit hints mode without performing an action |
+
+---
+
+## Usage Patterns
+
+<Tabs>
+  <Tab title="Quick Click">
+    **Scenario**: Click a "Submit" button labeled "AF".
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+Space
+    
+    # Type hint label
+    af
+    
+    # Action executes automatically, mode exits
+    ```
+  </Tab>
+  
+  <Tab title="Right-Click Menu">
+    **Scenario**: Right-click on an element to open context menu.
+    
+    ```bash
+    # Activate with right-click action
+    neru hints --action right_click
+    
+    # Type hint label
+    ab
+    
+    # Right-click executes automatically
+    ```
+  </Tab>
+  
+  <Tab title="Correction Workflow">
+    **Scenario**: Mistype a hint label and correct it.
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+Space
+    
+    # Oops, typed wrong character
+    a
+    
+    # Press backspace to undo
+    Backspace
+    
+    # Type correct label
+    af
+    ```
+  </Tab>
+  
+  <Tab title="Browser Navigation">
+    **Scenario**: Navigate a web page using hints (Vimium-style).
+    
+    ```bash
+    # Activate mode
+    Cmd+Shift+Space
+    
+    # Hints appear on all links and buttons
+    # Type label to click link
+    ac
+    
+    # Page navigates, mode exits
+    ```
+  </Tab>
+</Tabs>
+
+---
+
+## Configuration
+
+Hints Mode is configured in the `[hints]` section of your `config.toml`.
+
+### Basic Settings
+
+```toml
+[hints]
+enabled = true
+hint_characters = "asdfghjkl"  # Characters used for hint labels
+backspace_key = "backspace"    # Remove last typed character
+```
+
+### Auto-Exit Actions
+
+Configure which actions automatically exit the mode after execution:
+
+```toml
+[hints]
+auto_exit_actions = [
+  "left_click",
+  "right_click",
+  "middle_click",
+  "double_click"
+]
+```
+
+<Note>
+  Unlike Grid and Recursive Grid modes, Hints Mode typically exits immediately after selecting an element, regardless of `auto_exit_actions` configuration.
+</Note>
+
+### Filtering Behavior
+
+```toml
+[hints]
+filter_delay_ms = 0  # Delay before filtering hints (0 = instant)
+```
+
+---
+
+## Visual Customization
+
+Customize hint appearance in `[hints.overlay]`:
+
+```toml
+[hints.overlay]
+# Hint label styling
+label_background_color = "#1E293B"
+label_text_color = "#F1F5F9"
+label_font_size = 16.0
+label_padding = 4.0
+label_corner_radius = 4.0
+label_border_width = 1.0
+label_border_color = "#3B82F6"
+
+# Matched prefix highlighting
+matched_text_color = "#10B981"  # Color for already-typed characters
+```
+
+<Tip>
+  Use `matched_text_color` to visually distinguish typed characters from remaining characters in each hint label.
+</Tip>
+
+---
+
+## CLI Reference
+
+### Activate Mode
+
+```bash
+neru hints
+```
+
+### Activate with Specific Action
+
+```bash
+neru hints --action left_click
+neru hints --action right_click
+neru hints --action middle_click
+```
+
+<Note>
+  The `--action` flag is particularly useful in Hints Mode, as it mimics the Vimium workflow: activate with an action, type the label, and the action executes immediately.
+</Note>
+
+### Check Status
+
+```bash
+neru status
+# Mode: hints
+```
+
+---
+
+## Accessibility Requirements
+
+Hints Mode relies on the macOS Accessibility API to discover clickable elements. Some applications may require additional configuration.
+
+### Fully Supported Applications
+
+<Accordion title="Native macOS Apps">
+  - **Safari**: Full support
+  - **Finder**: Full support
+  - **Mail**: Full support
+  - **System Settings**: Full support
+  - **Terminal**: Full support
+</Accordion>
+
+<Accordion title="Electron Apps">
+  - **VS Code**: Full support
+  - **Cursor**: Full support
+  - **Slack**: Full support
+  - **Obsidian**: Full support
+  - **Discord**: Full support
+  - **Spotify**: Partial support (some elements may not be exposed)
+</Accordion>
+
+<Accordion title="Browsers">
+  - **Safari**: Full support
+  - **Chrome**: Full support with accessibility enabled
+  - **Firefox**: Full support with accessibility enabled
+  - **Arc**: Full support
+  - **Brave**: Full support
+</Accordion>
+
+### Applications Requiring Configuration
+
+Some apps require accessibility features to be explicitly enabled. See the [Troubleshooting Guide](/advanced/troubleshooting) for app-specific instructions.
+
+<Warning>
+  Hints Mode will not work in applications that do not expose their UI elements through the macOS Accessibility API. For such apps, use [Grid Mode](/modes/grid) or [Recursive Grid Mode](/modes/recursive-grid) instead.
+</Warning>
+
+---
+
+## Tips & Best Practices
+
+<Tip>
+  **Use home-row keys**: The default `asdfghjkl` characters minimize finger movement and maximize speed.
+</Tip>
+
+<Note>
+  **Refresh hints on page changes**: If a page updates dynamically (e.g., after clicking a tab), press the hotkey again to regenerate hints for the new content.
+</Note>
+
+<Tip>
+  **Combine with direct actions**: For workflows requiring multiple interactions, activate hints mode once, perform an action, then re-activate for the next interaction.
+</Tip>
+
+### Workflow Optimization
+
+1. **Vimium-Style Browsing**: Use `--action left_click` for seamless link clicking in browsers
+2. **Context Menus**: Use `--action right_click` to open context menus on UI elements
+3. **Custom Hint Characters**: If you prefer different key layouts, configure `hint_characters` to match your preference (e.g., `qwerty` layout)
+
+---
+
+## Troubleshooting
+
+### No Hints Appearing
+
+**Symptom**: Hotkey pressed but no hint labels appear.
+
+**Solutions**:
+
+<Steps>
+  <Step title="Verify Mode is Enabled">
+    Check your `config.toml`:
+    
+    ```toml
+    [hints]
+    enabled = true
+    ```
+  </Step>
+  
+  <Step title="Check Accessibility Permissions">
+    Ensure Neru has Accessibility permission in System Settings → Privacy & Security → Accessibility.
+  </Step>
+  
+  <Step title="Verify App Compatibility">
+    Some apps don't expose their UI through the accessibility tree. Try Grid Mode instead:
+    
+    ```bash
+    neru grid
+    ```
+  </Step>
+  
+  <Step title="Enable Accessibility in App">
+    For browsers (Chrome, Firefox), enable accessibility in settings:
+    
+    - **Chrome**: Settings → Accessibility → Enable accessibility features
+    - **Firefox**: about:config → `accessibility.force_disabled` set to `0`
+  </Step>
+</Steps>
+
+### Too Few Hints
+
+**Symptom**: Hints appear but many expected elements are missing.
+
+**Check**:
+- Application may not fully expose its accessibility tree
+- Try refreshing hints (re-activate mode) after page/UI changes
+- Some elements may be marked as non-interactive in the accessibility tree
+
+**Workaround**: Use [Grid Mode](/modes/grid) or [Recursive Grid Mode](/modes/recursive-grid) for universal compatibility.
+
+### Hints Overlapping
+
+**Symptom**: Multiple hints appear at the same location.
+
+**Solution**: Neru deduplicates hints by position. If you're still seeing overlaps, report this as a bug with the application name and screenshot.
+
+### Slow Hint Generation
+
+**Symptom**: Delay between activation and hints appearing.
+
+**Causes**:
+- Large number of elements on screen (e.g., complex web pages)
+- Application with slow accessibility API responses
+
+**Optimization**: Consider using Grid Mode for applications with slow hint generation.
+
+---
+
+## Comparison: Hints vs Grid Modes
+
+| Feature | Hints Mode | Grid Mode | Recursive Grid Mode |
+|---------|------------|-----------|---------------------|
+| **Detection** | Accessibility tree | Screen coordinates | Screen coordinates |
+| **Speed** | Fastest (direct element selection) | Fast (2-3 keystrokes) | Variable (2-10+ keystrokes) |
+| **Precision** | Element-level | Cell + subgrid | Unlimited depth |
+| **Compatibility** | Requires accessibility support | Universal | Universal |
+| **Best For** | Browsers, native apps with good accessibility | Quick clicks, general navigation | Pixel-perfect positioning |
+| **Setup** | May require app-specific config | Zero configuration | Zero configuration |
+
+<Tip>
+  Use **Hints Mode** for accessible apps (browsers, native macOS apps). Fall back to **Grid** or **Recursive Grid** for apps without accessibility tree support.
+</Tip>
+
+---
+
+## Related Documentation
+
+<CardGroup cols={2}>
+  <Card title="Grid Mode" icon="table-cells" href="/modes/grid">
+    Coordinate-based navigation without accessibility requirements
+  </Card>
+  
+  <Card title="Recursive Grid Mode" icon="grid-2" href="/modes/recursive-grid">
+    Precision navigation with recursive subdivision
+  </Card>
+  
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    App-specific configuration and fixes
+  </Card>
+  
+  <Card title="Configuration Reference" icon="gear" href="/configuration">
+    Complete guide to customizing Neru
+  </Card>
+</CardGroup>

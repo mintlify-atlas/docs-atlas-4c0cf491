@@ -1,0 +1,549 @@
+---
+title: Mode Configuration
+description: Configure navigation modes, keybindings, and behavior
+icon: grid
+---
+
+Neru provides multiple navigation modes for different use cases. Each mode has extensive configuration options.
+
+## General Mode Settings
+
+Settings that affect all modes:
+
+```toml
+[general]
+# Keys that exit any active mode
+mode_exit_keys = ["Escape"]
+
+# Cursor position behavior
+restore_cursor_position = false      # Return to original position
+center_cursor_position = false        # Center on screen after exit
+
+# Application exclusions
+excluded_apps = [
+    "com.apple.Terminal",
+    "com.googlecode.iterm2"
+]
+
+# Keyboard shortcut passthrough
+passthrough_unbounded_keys = false
+passthrough_unbounded_keys_blacklist = []
+
+# Screen sharing
+hide_overlay_in_screen_share = false
+```
+
+<ParamField path="mode_exit_keys" type="array" required>
+  Keys that exit any active mode. Must contain at least one key.
+  
+  **Valid keys**: `"Escape"`, `"Return"`, `"Tab"`, `"Space"`, `"Backspace"`, `"Delete"`, `"Home"`, `"End"`, `"PageUp"`, `"PageDown"`, arrow keys, `"F1"`-`"F20"`, or modifier combos like `"Ctrl+C"`.
+</ParamField>
+
+<ParamField path="restore_cursor_position" type="boolean" default="false">
+  Return cursor to its original position after exiting a mode.
+  
+  <Warning>Mutually exclusive with `center_cursor_position`</Warning>
+</ParamField>
+
+<ParamField path="center_cursor_position" type="boolean" default="false">
+  Center the cursor on the current screen after exiting a mode.
+  
+  <Warning>Mutually exclusive with `restore_cursor_position`</Warning>
+</ParamField>
+
+<ParamField path="excluded_apps" type="array" default="[]">
+  Bundle IDs where Neru won't activate. Find bundle IDs:
+  ```bash
+  osascript -e 'id of app "Safari"'
+  ```
+</ParamField>
+
+<ParamField path="passthrough_unbounded_keys" type="boolean" default="false">
+  Allow unbound Cmd/Ctrl/Alt shortcuts to reach macOS while a mode is active.
+  
+  Useful for: `Cmd+Tab`, `Cmd+Space`, `Cmd+W`, `Alt+Tab`
+</ParamField>
+
+<ParamField path="passthrough_unbounded_keys_blacklist" type="array" default="[]">
+  Shortcuts that should stay consumed by Neru even when passthrough is enabled.
+  
+  Example: `["Cmd+W", "Cmd+Q"]`
+</ParamField>
+
+## Hints Mode
+
+Accessibility-based navigation for clicking UI elements:
+
+```toml
+[hints]
+enabled = true
+auto_exit_actions = ["left_click", "middle_click"]
+mode_exit_keys = []                      # Additional exit keys
+hint_characters = "asdfghjkl"            # Home row keys
+backspace_key = "Backspace"
+mouse_action_refresh_delay = 0           # ms delay before refresh
+max_depth = 50                           # Accessibility tree depth
+parallel_threshold = 20                  # Parallel processing threshold
+
+# System areas
+include_menubar_hints = false
+include_dock_hints = false
+include_nc_hints = false
+include_stage_manager_hints = false
+detect_mission_control = false           # macOS 26+ only
+
+# Clickable element detection
+clickable_roles = [
+    "AXButton",
+    "AXLink",
+    "AXTextField",
+    "AXCheckBox",
+    "AXRadioButton",
+    "AXPopUpButton",
+    "AXComboBox",
+    "AXSlider",
+    "AXTabButton",
+    "AXSwitch",
+    "AXDisclosureTriangle",
+    "AXTextArea",
+    "AXMenuButton",
+    "AXMenuItem",
+    "AXCell",
+    "AXRow"
+]
+ignore_clickable_check = false
+```
+
+<ParamField path="hint_characters" type="string" required>
+  Characters used for hint labels. Order matters for ergonomics.
+  
+  - Minimum 2 unique ASCII characters
+  - No duplicates (case-insensitive)
+  - Recommended: Home row keys for speed
+  
+  <CodeGroup>
+  ```toml Home row (default)
+  hint_characters = "asdfghjkl"
+  ```
+  
+  ```toml Vim-style
+  hint_characters = "hjklasdfg"
+  ```
+  
+  ```toml Center columns
+  hint_characters = "fjdksla;g"
+  ```
+  </CodeGroup>
+</ParamField>
+
+<ParamField path="auto_exit_actions" type="array" default="[]">
+  Actions that cause hints mode to exit automatically after execution.
+  
+  Available actions: `left_click`, `right_click`, `middle_click`, `mouse_down`, `mouse_up`
+  
+  <Warning>Do not include `move_mouse_relative` - causes exit on every arrow key press</Warning>
+</ParamField>
+
+<ParamField path="mouse_action_refresh_delay" type="integer" default="0">
+  Milliseconds to wait before refreshing hints after a click (0-10000).
+  
+  Useful for slow-loading apps or dynamic web content.
+</ParamField>
+
+### Per-App Configuration
+
+Override settings for specific applications:
+
+```toml
+# Chrome: add tab groups
+[[hints.app_configs]]
+bundle_id = "com.google.Chrome"
+additional_clickable_roles = ["AXTabGroup"]
+
+# Safari: delay for dynamic content
+[[hints.app_configs]]
+bundle_id = "com.apple.Safari"
+mouse_action_refresh_delay = 1000
+
+# Adobe apps: custom roles
+[[hints.app_configs]]
+bundle_id = "com.adobe.illustrator"
+additional_clickable_roles = ["AXStaticText", "AXImage"]
+ignore_clickable_check = true
+```
+
+### Enhanced Browser Support
+
+Enable accessibility for Electron/Chromium/Firefox apps:
+
+```toml
+[hints.additional_ax_support]
+enable = false                           # Disabled by default
+additional_electron_bundles = []         # Custom Electron apps
+additional_chromium_bundles = []         # Custom Chromium browsers
+additional_firefox_bundles = []          # Custom Firefox variants
+```
+
+<Info>
+Auto-detected apps: VS Code, Slack, Spotify, Chrome, Brave, Arc, Firefox, Zen Browser
+</Info>
+
+## Grid Mode
+
+Coordinate-based grid for universal cursor positioning:
+
+```toml
+[grid]
+enabled = true
+auto_exit_actions = ["left_click"]
+mode_exit_keys = []
+characters = "abcdefghijklmnpqrstuvwxyz"
+sublayer_keys = "abcdefghijklmnpqrstuvwxyz"
+reset_key = " "                          # Space bar
+backspace_key = "Backspace"
+
+# Behavior
+live_match_update = true                 # Highlight as you type
+hide_unmatched = true                    # Dim non-matching cells
+prewarm_enabled = true                   # Pre-compute on startup
+enable_gc = false                        # Periodic memory cleanup
+
+# Optional: custom row/column labels
+row_labels = ""                          # Empty = infer from characters
+col_labels = ""                          # Empty = infer from characters
+```
+
+<ParamField path="characters" type="string" required>
+  Primary grid cell labels.
+  
+  - Minimum 2 unique ASCII characters
+  - No duplicates (case-insensitive)
+  - Cannot contain the reset key
+  
+  <CodeGroup>
+  ```toml Letters (default)
+  characters = "abcdefghijklmnpqrstuvwxyz"
+  ```
+  
+  ```toml Home row
+  characters = "asdfghjkl"
+  ```
+  
+  ```toml Numbers
+  characters = "1234567890"
+  ```
+  </CodeGroup>
+</ParamField>
+
+<ParamField path="row_labels" type="string" default="">
+  Custom labels for rows. If empty, inferred from `characters`.
+  
+  Example:
+  ```toml
+  row_labels = "123456789"
+  col_labels = "abcdefghij"
+  ```
+</ParamField>
+
+<ParamField path="prewarm_enabled" type="boolean" default="true">
+  Pre-compute grid on startup for faster first activation.
+  
+  Uses ~1.5MB RAM per screen.
+</ParamField>
+
+## Recursive Grid Mode
+
+Iterative subdivision for precise positioning:
+
+```toml
+[recursive_grid]
+enabled = true
+auto_exit_actions = ["left_click", "right_click"]
+mode_exit_keys = []
+
+# Grid dimensions
+grid_cols = 2                            # Columns (>= 2)
+grid_rows = 2                            # Rows (>= 2)
+keys = "uijk"                            # Cell keys (cols × rows chars)
+backspace_key = "Backspace"              # Go up one level
+reset_key = " "                          # Reset to center
+
+# Limits
+min_size_width = 25                      # Min cell width (px)
+min_size_height = 25                     # Min cell height (px)
+max_depth = 10                           # Max recursion levels (1-20)
+```
+
+<ParamField path="grid_cols" type="integer" required>
+  Number of columns in the grid (minimum 2).
+</ParamField>
+
+<ParamField path="grid_rows" type="integer" required>
+  Number of rows in the grid (minimum 2).
+</ParamField>
+
+<ParamField path="keys" type="string" required>
+  Cell selection keys. Must contain exactly `grid_cols × grid_rows` unique ASCII characters.
+  
+  <CodeGroup>
+  ```toml 2×2 (default)
+  grid_cols = 2
+  grid_rows = 2
+  keys = "uijk"  # u=TL, i=TR, j=BL, k=BR
+  ```
+  
+  ```toml 3×3
+  grid_cols = 3
+  grid_rows = 3
+  keys = "gcrhtnmwv"
+  ```
+  
+  ```toml 3×2 (non-square)
+  grid_cols = 3
+  grid_rows = 2
+  keys = "gcrhtn"
+  ```
+  </CodeGroup>
+</ParamField>
+
+### Per-Depth Layers
+
+Override grid dimensions at specific recursion depths:
+
+```toml
+[recursive_grid]
+# Default: 2×2
+grid_cols = 2
+grid_rows = 2
+keys = "uijk"
+
+# Depth 0: wide 4×2 grid
+[[recursive_grid.layers]]
+depth = 0
+grid_cols = 4
+grid_rows = 2
+keys = "qwerasdf"
+
+# Depth 1: 3×3 grid
+[[recursive_grid.layers]]
+depth = 1
+grid_cols = 3
+grid_rows = 3
+keys = "qweasdzxc"
+
+# Depth 2+: falls back to 2×2 defaults
+```
+
+<Info>
+Depths are 0-indexed. You can configure any depth; unlisted depths use top-level defaults.
+</Info>
+
+## Scroll Mode
+
+Vim-style scrolling at cursor position:
+
+```toml
+[scroll]
+scroll_step = 50                         # Pixels per j/k press
+scroll_step_half = 500                   # Pixels for Ctrl+D/U
+scroll_step_full = 1000000               # Pixels for gg/G (top/bottom)
+mode_exit_keys = []
+
+[scroll.key_bindings]
+scroll_up = ["k", "Up"]
+scroll_down = ["j", "Down"]
+scroll_left = ["h", "Left"]
+scroll_right = ["l", "Right"]
+go_top = ["gg", "Cmd+Up"]
+go_bottom = ["Shift+G", "Cmd+Down"]
+page_up = ["Ctrl+U", "PageUp"]
+page_down = ["Ctrl+D", "PageDown"]
+```
+
+<ParamField path="scroll_step" type="integer" default="50">
+  Pixels to scroll per single key press (minimum 1).
+</ParamField>
+
+<ParamField path="scroll_step_half" type="integer" default="500">
+  Pixels to scroll for half-page movements (minimum 1).
+</ParamField>
+
+<ParamField path="scroll_step_full" type="integer" default="1000000">
+  Pixels to scroll for full-page movements and jumps to top/bottom.
+</ParamField>
+
+### Custom Keybindings
+
+Each action supports multiple keys:
+
+<CodeGroup>
+```toml Vim-style
+[scroll.key_bindings]
+scroll_up = ["k"]
+scroll_down = ["j"]
+scroll_left = ["h"]
+scroll_right = ["l"]
+go_top = ["gg"]
+go_bottom = ["Shift+G"]
+```
+
+```toml Mac-style
+[scroll.key_bindings]
+scroll_up = ["Up"]
+scroll_down = ["Down"]
+go_top = ["Cmd+Up", "Home"]
+go_bottom = ["Cmd+Down", "End"]
+page_up = ["PageUp"]
+page_down = ["PageDown"]
+```
+
+```toml Mixed
+[scroll.key_bindings]
+scroll_up = ["k", "Up"]
+scroll_down = ["j", "Down"]
+go_top = ["gg", "Home"]
+go_bottom = ["Shift+G", "End"]
+```
+</CodeGroup>
+
+## Action Mode
+
+Keyboard-driven mouse actions inside hints/grid modes:
+
+```toml
+[action]
+move_mouse_step = 10                     # Pixels per arrow key
+
+[action.key_bindings]
+left_click = "Shift+L"
+right_click = "Shift+R"
+middle_click = "Shift+M"
+mouse_down = "Shift+I"                   # Press and hold
+mouse_up = "Shift+U"                     # Release button
+move_mouse_up = "Up"
+move_mouse_down = "Down"
+move_mouse_left = "Left"
+move_mouse_right = "Right"
+```
+
+<ParamField path="move_mouse_step" type="integer" default="10">
+  Pixels to move cursor per arrow key press (minimum 1).
+  
+  - `10` = default (~1mm on typical display)
+  - `5` = finer control
+  - `20` = faster movement
+</ParamField>
+
+### Usage Workflow
+
+1. Enter hints or grid mode
+2. Type to select a position
+3. Use arrow keys to fine-tune position
+4. Press action key to click
+
+## Mode Indicator
+
+Visual label showing the current active mode:
+
+```toml
+[mode_indicator]
+
+[mode_indicator.scroll]
+enabled = true
+text = "Scroll"
+
+[mode_indicator.hints]
+enabled = false
+text = "Hints"
+
+[mode_indicator.grid]
+enabled = false
+text = "Grid"
+
+[mode_indicator.recursive_grid]
+enabled = false
+text = "Recursive Grid"
+
+[mode_indicator.ui]
+font_size = 10
+font_family = ""
+indicator_x_offset = 20
+indicator_y_offset = 20
+```
+
+<ParamField path="text" type="string">
+  Label text shown in the indicator. Empty string `""` hides the label but keeps indicator enabled.
+</ParamField>
+
+<ParamField path="indicator_x_offset" type="integer" default="20">
+  Horizontal offset from cursor (pixels).
+</ParamField>
+
+<ParamField path="indicator_y_offset" type="integer" default="20">
+  Vertical offset from cursor (pixels).
+</ParamField>
+
+## Complete Example
+
+Full configuration with all modes:
+
+```toml
+[general]
+excluded_apps = ["com.apple.Terminal"]
+mode_exit_keys = ["Escape"]
+passthrough_unbounded_keys = true
+
+[hints]
+enabled = true
+auto_exit_actions = ["left_click"]
+hint_characters = "asdfghjkl"
+include_menubar_hints = true
+
+[[hints.app_configs]]
+bundle_id = "com.google.Chrome"
+additional_clickable_roles = ["AXTabGroup"]
+
+[grid]
+enabled = true
+auto_exit_actions = ["left_click"]
+characters = "abcdefghijklmnpqrstuvwxyz"
+live_match_update = true
+
+[recursive_grid]
+enabled = true
+auto_exit_actions = ["left_click", "right_click"]
+grid_cols = 2
+grid_rows = 2
+keys = "uijk"
+
+[scroll]
+scroll_step = 50
+
+[scroll.key_bindings]
+scroll_up = ["k", "Up"]
+scroll_down = ["j", "Down"]
+go_top = ["gg", "Home"]
+go_bottom = ["Shift+G", "End"]
+
+[action]
+move_mouse_step = 10
+
+[action.key_bindings]
+left_click = "Shift+L"
+right_click = "Shift+R"
+move_mouse_up = "Up"
+move_mouse_down = "Down"
+move_mouse_left = "Left"
+move_mouse_right = "Right"
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Appearance" icon="palette" href="/configuration/appearance">
+    Customize colors, fonts, and visual styling
+  </Card>
+  <Card title="Hotkeys" icon="keyboard" href="/configuration/hotkeys">
+    Configure global keyboard shortcuts
+  </Card>
+</CardGroup>

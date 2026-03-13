@@ -1,0 +1,691 @@
+---
+title: Testing Guide
+description: Testing patterns, conventions, and best practices for Neru
+---
+
+## Overview
+
+Neru has a comprehensive test suite with clear separation between unit tests and integration tests. All new code requires appropriate test coverage.
+
+<Note>
+  Tests must pass before code can be merged. Run `just test` to verify all tests pass.
+</Note>
+
+## Test Organization
+
+### Test Types
+
+| Test Type | File Pattern | Purpose | Command | Build Tag |
+|-----------|--------------|---------|---------|------------|
+| **Unit Tests** | `*_test.go` | Business logic with mocks, no system dependencies | `just test-unit` | None |
+| **Integration Tests** | `*_integration_darwin_test.go`<br/>`*_integration_linux_test.go` | Real system interactions with platform APIs | `just test-integration` | `integration` |
+
+### File Naming Convention
+
+```text
+package_test.go                          # Unit tests (logic, mocks)
+package_integration_darwin_test.go       # macOS integration tests
+package_integration_linux_test.go        # Linux integration tests
+```
+
+## Running Tests
+
+### Quick Commands
+
+<CodeGroup>
+
+```bash All Tests
+# Run all tests (unit + integration)
+just test
+```
+
+```bash Unit Tests Only
+# Fast, no system dependencies
+just test-unit
+```
+
+```bash Integration Tests Only
+# Comprehensive, uses real system APIs
+just test-integration
+```
+
+```bash Race Detection
+# Detect race conditions
+just test-race
+
+# Or separately
+just test-race-unit
+just test-race-integration
+```
+
+```bash Specific Package
+# Test a single package
+go test ./internal/core/domain/hint/
+
+# With verbose output
+go test -v ./internal/app/services/
+
+# Integration test specific component
+go test -tags=integration ./internal/core/infra/accessibility/
+```
+
+</CodeGroup>
+
+### Complete Test Suite
+
+```bash
+# Run everything (unit + integration + race detection)
+just test-all
+```
+
+## Unit Tests
+
+### Purpose
+
+Unit tests verify business logic in isolation using mocks for external dependencies. They should be:
+
+- **Fast**: No I/O, no system calls
+- **Isolated**: Test one unit of functionality
+- **Deterministic**: Same input always produces same output
+- **Independent**: Can run in any order
+
+### Coverage Areas
+
+<CardGroup cols={2}>
+  <Card title="Domain Logic" icon="brain">
+    - Hint generation algorithms
+    - Grid calculations
+    - Element filtering
+    - Action validation
+  </Card>
+  
+  <Card title="Service Logic" icon="gear">
+    - Mode transitions
+    - Action processing
+    - Configuration validation
+    - State management
+  </Card>
+  
+  <Card title="Adapter Interfaces" icon="plug">
+    - Port implementations
+    - Mocked dependencies
+    - Error handling
+  </Card>
+  
+  <Card title="Configuration" icon="sliders">
+    - TOML parsing
+    - Validation logic
+    - Default values
+  </Card>
+</CardGroup>
+
+### Table-Driven Tests
+
+Use table-driven tests for testing multiple scenarios:
+
+```go
+func TestHintGenerator_Generate(t *testing.T) {
+    tests := []struct {
+        name        string
+        charset     string
+        elementCount int
+        want        int
+        wantErr     bool
+    }{
+        {
+            name:        "generates hints for small set",
+            charset:     "asdf",
+            elementCount: 10,
+            want:        10,
+            wantErr:     false,
+        },
+        {
+            name:        "generates hints for large set",
+            charset:     "abcdefghij",
+            elementCount: 100,
+            want:        100,
+            wantErr:     false,
+        },
+        {
+            name:        "fails with empty charset",
+            charset:     "",
+            elementCount: 10,
+            want:        0,
+            wantErr:     true,
+        },
+    }
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            gen := NewGenerator(tt.charset, testLogger())
+            hints, err := gen.Generate(tt.elementCount)
+
+            if (err != nil) != tt.wantErr {
+                t.Errorf("Generate() error = %v, wantErr %v", err, tt.wantErr)
+                return
+            }
+
+            if len(hints) != tt.want {
+                t.Errorf("Generate() got %d hints, want %d", len(hints), tt.want)
+            }
+        })
+    }
+}
+```
+
+### Using Mocks
+
+Use mocks to isolate the unit under test:
+
+```go
+type mockAccessibilityPort struct {
+    elements []*domain.Element
+    err      error
+}
+
+func (m *mockAccessibilityPort) GetElements() ([]*domain.Element, error) {
+    return m.elements, m.err
+}
+
+func TestHintService_Generate(t *testing.T) {
+    // Setup mock
+    mockElements := []*domain.Element{
+        {Role: "button", Bounds: domain.Rect{X: 0, Y: 0, Width: 100, Height: 50}},
+        {Role: "link", Bounds: domain.Rect{X: 100, Y: 0, Width: 80, Height: 30}},
+    }
+    mockAcc := &mockAccessibilityPort{elements: mockElements}
+
+    // Create service with mock
+    service := NewHintService(mockAcc, nil, nil, nil, nil, testLogger())
+
+    // Test
+    hints, err := service.GenerateHints()
+    if err != nil {
+        t.Fatalf("GenerateHints() error = %v", err)
+    }
+
+    if len(hints) != len(mockElements) {
+        t.Errorf("got %d hints, want %d", len(hints), len(mockElements))
+    }
+}
+```
+
+## Integration Tests
+
+### Purpose
+
+Integration tests verify that components work correctly with real system APIs. They:
+
+- **Use Real APIs**: Test actual platform functionality
+- **Are Platform-Specific**: Tagged with OS build constraints
+- **May Be Slower**: Involve I/O and system calls
+- **Require System Resources**: Need accessibility permissions, windows, etc.
+
+### Coverage Areas
+
+<CardGroup cols={2}>
+  <Card title="Platform APIs" icon="desktop">
+    - macOS Accessibility API
+    - Event Tap API
+    - Hotkey registration
+    - Overlay management
+  </Card>
+  
+  <Card title="IPC" icon="arrows-left-right">
+    - Unix socket communication
+    - Command dispatch
+    - State synchronization
+  </Card>
+  
+  <Card title="File System" icon="folder">
+    - Config file loading
+    - Config file watching
+    - Log file writing
+  </Card>
+  
+  <Card title="Component Coordination" icon="sitemap">
+    - Service interactions
+    - Adapter integration
+    - End-to-end workflows
+  </Card>
+</CardGroup>
+
+### Platform-Specific Tests
+
+Use build tags to specify platform requirements:
+
+```go
+//go:build integration && darwin
+
+package accessibility
+
+import (
+    "testing"
+    "github.com/y3owk1n/neru/internal/core/infra/accessibility"
+)
+
+func TestAccessibilityAdapter_GetElementAtPosition_Integration(t *testing.T) {
+    // Skip if not running in CI or without proper permissions
+    if testing.Short() {
+        t.Skip("Skipping integration test in short mode")
+    }
+
+    adapter := accessibility.NewAdapter(testLogger())
+    element, err := adapter.GetElementAtPosition(100, 100)
+
+    if err != nil {
+        t.Fatalf("GetElementAtPosition() error = %v", err)
+    }
+
+    if element == nil {
+        t.Error("expected element, got nil")
+    }
+}
+```
+
+### Integration Test Patterns
+
+<Tabs>
+  <Tab title="Setup & Teardown">
+    ```go
+    func TestMain(m *testing.M) {
+        // Setup: Initialize test resources
+        setup()
+        
+        // Run tests
+        code := m.Run()
+        
+        // Teardown: Clean up
+        teardown()
+        
+        os.Exit(code)
+    }
+
+    func setup() {
+        // Initialize test database, create temp files, etc.
+    }
+
+    func teardown() {
+        // Clean up resources
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Real Dependencies">
+    ```go
+    func TestIPCController_Integration(t *testing.T) {
+        // Create temporary socket file
+        tmpDir := t.TempDir()
+        socketPath := filepath.Join(tmpDir, "test.sock")
+        
+        // Start real IPC server
+        controller := ipc.NewController(socketPath, handler, logger)
+        go controller.Start()
+        defer controller.Stop()
+        
+        // Connect real client
+        client, err := ipc.NewClient(socketPath)
+        if err != nil {
+            t.Fatalf("failed to connect: %v", err)
+        }
+        defer client.Close()
+        
+        // Test real communication
+        response, err := client.Send("hints")
+        if err != nil {
+            t.Errorf("Send() error = %v", err)
+        }
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Timeout Handling">
+    ```go
+    func TestEventTap_Integration(t *testing.T) {
+        // Set timeout for slow operations
+        ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+        defer cancel()
+        
+        eventTap := eventtap.New(logger)
+        err := eventTap.Start(ctx)
+        if err != nil {
+            t.Fatalf("Start() error = %v", err)
+        }
+        defer eventTap.Stop()
+        
+        // Wait for event or timeout
+        select {
+        case event := <-eventTap.Events():
+            // Verify event
+        case <-ctx.Done():
+            t.Fatal("timeout waiting for event")
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+## Test Best Practices
+
+### Test Structure
+
+Follow the Arrange-Act-Assert pattern:
+
+```go
+func TestExample(t *testing.T) {
+    // Arrange: Set up test conditions
+    input := "test input"
+    expected := "expected output"
+    service := NewService(testDependencies())
+    
+    // Act: Execute the code under test
+    result, err := service.Process(input)
+    
+    // Assert: Verify the results
+    if err != nil {
+        t.Fatalf("Process() error = %v", err)
+    }
+    if result != expected {
+        t.Errorf("Process() = %v, want %v", result, expected)
+    }
+}
+```
+
+### Error Testing
+
+<Tabs>
+  <Tab title="Error Conditions">
+    ```go
+    func TestService_Error(t *testing.T) {
+        service := NewService(nil)  // Invalid config
+        
+        _, err := service.Process("input")
+        if err == nil {
+            t.Error("expected error, got nil")
+        }
+        
+        // Test specific error type
+        if !errors.Is(err, ErrInvalidConfig) {
+            t.Errorf("expected ErrInvalidConfig, got %v", err)
+        }
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Error Messages">
+    ```go
+    func TestValidator_Validate(t *testing.T) {
+        validator := NewValidator()
+        
+        err := validator.Validate(invalidInput)
+        if err == nil {
+            t.Fatal("expected error, got nil")
+        }
+        
+        // Check error message contains useful information
+        errMsg := err.Error()
+        if !strings.Contains(errMsg, "field") {
+            t.Errorf("error message should mention field name, got: %s", errMsg)
+        }
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Test Helpers
+
+Create helper functions for common test setup:
+
+```go
+// testLogger returns a no-op logger for tests
+func testLogger() *zap.Logger {
+    return zap.NewNop()
+}
+
+// testConfig returns a valid test configuration
+func testConfig() *config.Config {
+    return &config.Config{
+        Hints: config.HintsConfig{
+            Charset: "asdfghjkl",
+        },
+        // ... other defaults
+    }
+}
+
+// testElement creates a test element with given properties
+func testElement(role string, x, y, width, height int) *domain.Element {
+    return &domain.Element{
+        Role: role,
+        Bounds: domain.Rect{
+            X:      x,
+            Y:      y,
+            Width:  width,
+            Height: height,
+        },
+    }
+}
+```
+
+## Test Coverage
+
+### Check Coverage
+
+```bash
+# Run tests with coverage
+go test -cover ./...
+
+# Generate detailed coverage report
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+```
+
+### Coverage Goals
+
+<CardGroup cols={2}>
+  <Card title="Domain Logic" icon="bullseye">
+    Target: 80%+ coverage
+    
+    Core business logic should have comprehensive test coverage.
+  </Card>
+  
+  <Card title="Service Layer" icon="chart-line">
+    Target: 70%+ coverage
+    
+    Use case orchestration and workflows should be well-tested.
+  </Card>
+  
+  <Card title="Infrastructure" icon="server">
+    Target: 60%+ coverage
+    
+    Platform-specific code may be harder to test but should have integration tests.
+  </Card>
+  
+  <Card title="CLI" icon="terminal">
+    Target: 50%+ coverage
+    
+    Command parsing and validation should have basic coverage.
+  </Card>
+</CardGroup>
+
+## Debugging Tests
+
+### Verbose Output
+
+```bash
+# Run tests with verbose output
+go test -v ./...
+
+# Run specific test with verbose output
+go test -v -run TestHintGenerator_Generate ./internal/core/domain/hint/
+```
+
+### Test-Specific Logging
+
+```go
+func TestDebugExample(t *testing.T) {
+    // Enable debug logging for this test
+    logger := zaptest.NewLogger(t)
+    service := NewService(logger)
+    
+    // Logs will appear in test output
+    result, err := service.Process("input")
+    if err != nil {
+        t.Fatalf("Process() error = %v", err)
+    }
+}
+```
+
+### Debugging Individual Tests
+
+```bash
+# Run single test
+go test -run TestSpecificName ./pkg/
+
+# Run with debugging
+dlv test ./internal/app/services/ -- -test.run TestHintService
+```
+
+## Continuous Integration
+
+Tests run automatically on CI for:
+
+- Pull requests
+- Commits to main branch
+- Release builds
+
+### CI Test Commands
+
+```bash
+# What CI runs
+just fmt-check   # Verify formatting
+just lint        # Run linters
+just test-unit   # Run unit tests (fast)
+```
+
+<Note>
+  Integration tests typically run only in specific CI environments with proper permissions and system access.
+</Note>
+
+## Testing Checklist
+
+Before submitting a PR:
+
+<Steps>
+  <Step title="Write tests for new code">
+    All new functionality must have corresponding tests.
+  </Step>
+  
+  <Step title="Run unit tests">
+    ```bash
+    just test-unit
+    ```
+  </Step>
+  
+  <Step title="Run integration tests">
+    ```bash
+    just test-integration
+    ```
+  </Step>
+  
+  <Step title="Check for race conditions">
+    ```bash
+    just test-race
+    ```
+  </Step>
+  
+  <Step title="Verify coverage">
+    ```bash
+    go test -cover ./...
+    ```
+  </Step>
+  
+  <Step title="Clean up test code">
+    Remove debug statements, ensure tests are deterministic.
+  </Step>
+</Steps>
+
+## Common Test Patterns
+
+<AccordionGroup>
+  <Accordion title="Testing with contexts">
+    ```go
+    func TestWithContext(t *testing.T) {
+        ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+        defer cancel()
+        
+        result, err := DoSomethingWithContext(ctx)
+        if err != nil {
+            t.Fatalf("unexpected error: %v", err)
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Testing concurrent code">
+    ```go
+    func TestConcurrent(t *testing.T) {
+        var wg sync.WaitGroup
+        errors := make(chan error, 10)
+        
+        for i := 0; i < 10; i++ {
+            wg.Add(1)
+            go func() {
+                defer wg.Done()
+                if err := DoWork(); err != nil {
+                    errors <- err
+                }
+            }()
+        }
+        
+        wg.Wait()
+        close(errors)
+        
+        for err := range errors {
+            t.Errorf("concurrent error: %v", err)
+        }
+    }
+    ```
+  </Accordion>
+  
+  <Accordion title="Testing with temporary files">
+    ```go
+    func TestFileOperations(t *testing.T) {
+        // Create temp directory (automatically cleaned up)
+        tmpDir := t.TempDir()
+        testFile := filepath.Join(tmpDir, "test.txt")
+        
+        // Write test data
+        err := os.WriteFile(testFile, []byte("test"), 0644)
+        if err != nil {
+            t.Fatalf("failed to write test file: %v", err)
+        }
+        
+        // Test your code that reads the file
+        result, err := ReadConfig(testFile)
+        if err != nil {
+            t.Errorf("ReadConfig() error = %v", err)
+        }
+    }
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Architecture" icon="sitemap" href="/development/architecture">
+    Learn about Neru's architecture and design patterns
+  </Card>
+  
+  <Card title="Coding Standards" icon="book" href="/development/coding-standards">
+    Review code style and naming conventions
+  </Card>
+  
+  <Card title="Contributing" icon="code-pull-request" href="/development/setup">
+    Learn how to contribute to Neru
+  </Card>
+  
+  <Card title="Development Setup" icon="wrench" href="/development/setup">
+    Set up your development environment
+  </Card>
+</CardGroup>

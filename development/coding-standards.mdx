@@ -1,0 +1,552 @@
+---
+title: Coding Standards
+description: Code style, conventions, and best practices for Neru development
+---
+
+## Overview
+
+This document defines the coding standards and conventions for the Neru project. Following these standards ensures the codebase appears written by a single developer and maintains consistency across all files.
+
+<Note>
+  All code must pass formatting and linting checks before being committed. Use `just fmt` and `just lint` to validate your code.
+</Note>
+
+## General Standards
+
+### File Formatting
+
+All files must follow these basic formatting rules (enforced by `.editorconfig`):
+
+- **Character encoding**: UTF-8
+- **Line endings**: LF (Unix-style)
+- **Indentation**: Tabs (width 4 spaces when displayed)
+- **Trailing whitespace**: None
+- **Final newline**: Required
+
+### File Organization
+
+```
+neru/
+├── cmd/                    # Application entry points
+├── internal/               # Private application code
+│   ├── app/               # Application orchestration
+│   ├── cli/               # CLI commands
+│   ├── config/            # Configuration management
+│   ├── core/              # Core business logic and infrastructure
+│   └── ui/                # UI rendering
+├── configs/               # Configuration examples
+├── docs/                  # Documentation
+└── scripts/               # Build and utility scripts
+```
+
+### Naming Conventions
+
+- **Directories**: lowercase, underscore-separated (e.g., `hint_generator`)
+- **Files**: lowercase, underscore-separated (e.g., `hint_service.go`)
+- **Test files**: `*_test.go`, `*_integration_darwin_test.go`, `*_integration_linux_test.go`
+
+## Go Conventions
+
+### Import Organization
+
+Use `goimports` to automatically organize imports into three groups:
+
+```go
+package example
+
+// Standard library imports
+import (
+    "context"
+    "fmt"
+    "time"
+)
+
+// External dependencies
+import (
+    "github.com/spf13/cobra"
+)
+
+// Internal packages
+import (
+    "github.com/y3owk1n/neru/internal/config"
+    "github.com/y3owk1n/neru/internal/core/domain"
+)
+```
+
+### Naming Patterns
+
+<Tabs>
+  <Tab title="Packages">
+    - Use short, lowercase, single-word names
+    - No underscores or mixedCaps
+    - Choose names that describe the package's purpose
+    
+    ```go
+    package hint     // Good
+    package hintpkg  // Bad (redundant suffix)
+    package hint_gen // Bad (underscore)
+    ```
+  </Tab>
+  
+  <Tab title="Interfaces">
+    - Single-method interfaces: `-er` suffix
+    - Multi-method interfaces: descriptive noun
+    
+    ```go
+    type Reader interface {        // Good (single method)
+        Read(p []byte) (n int, err error)
+    }
+    
+    type AccessibilityPort interface {  // Good (multi-method)
+        GetElementAtPosition(x, y int) (*Element, error)
+        ClickElement(element *Element) error
+    }
+    ```
+  </Tab>
+  
+  <Tab title="Variables">
+    - Use camelCase for local variables
+    - Use PascalCase for exported variables
+    - Single-letter names for short scopes (i, j, k for loops)
+    - Descriptive names for larger scopes
+    
+    ```go
+    // Good
+    var hintCount int
+    var ElementNotFound = errors.New("element not found")
+    
+    for i := 0; i < len(hints); i++ {
+        // Single-letter 'i' is fine here
+    }
+    
+    // Bad
+    var hint_count int  // Don't use underscores
+    var x int          // Too vague in larger scope
+    ```
+  </Tab>
+  
+  <Tab title="Functions">
+    - Use camelCase for unexported functions
+    - Use PascalCase for exported functions
+    - Start with a verb describing the action
+    
+    ```go
+    func GenerateHints() []Hint       // Good (exported)
+    func calculatePosition() Point    // Good (unexported)
+    
+    func Hints() []Hint              // Bad (noun, unclear)
+    func get_hints() []Hint          // Bad (underscore)
+    ```
+  </Tab>
+</Tabs>
+
+### Error Handling
+
+Neru uses a custom error package with proper wrapping:
+
+```go
+import "github.com/y3owk1n/neru/internal/core/errors"
+
+// Define error types
+var (
+    ErrElementNotFound = errors.CodeNotFound.New("element not found")
+    ErrInvalidConfig = errors.CodeInvalidInput.New("invalid configuration")
+)
+
+// Wrap errors with context
+func GetElement(id string) (*Element, error) {
+    element, err := db.Query(id)
+    if err != nil {
+        return nil, errors.CodeNotFound.Wrap(err, "failed to get element")
+    }
+    return element, nil
+}
+
+// Handle errors
+if err := ProcessHints(); err != nil {
+    if errors.Is(err, ErrElementNotFound) {
+        // Handle specific error
+    }
+    return err
+}
+```
+
+### Receiver Conventions
+
+<Tabs>
+  <Tab title="Naming">
+    Use one or two letter abbreviations consistently:
+    
+    ```go
+    type HintService struct {}
+    
+    // Good - consistent 'hs' throughout
+    func (hs *HintService) Generate() {}
+    func (hs *HintService) Display() {}
+    
+    // Bad - inconsistent naming
+    func (h *HintService) Generate() {}
+    func (svc *HintService) Display() {}
+    ```
+  </Tab>
+  
+  <Tab title="Pointer vs Value">
+    Use pointer receivers when:
+    - Method modifies the receiver
+    - Struct is large (avoid copying)
+    - Consistency (if any method needs pointer, use pointer for all)
+    
+    ```go
+    // Pointer receiver (modifies state)
+    func (hs *HintService) SetConfig(cfg Config) {
+        hs.config = cfg
+    }
+    
+    // Value receiver (read-only, small struct)
+    func (p Point) String() string {
+        return fmt.Sprintf("(%d, %d)", p.X, p.Y)
+    }
+    ```
+  </Tab>
+</Tabs>
+
+### Documentation Comments
+
+Add godoc comments for all exported symbols:
+
+```go
+// Package hint provides hint generation and management for UI navigation.
+//
+// The hint system generates unique labels for clickable UI elements,
+// allowing keyboard-driven navigation.
+package hint
+
+// Generator creates hint labels for UI elements.
+//
+// It uses configurable character sets and algorithms to generate
+// unique, easy-to-type hint sequences.
+type Generator struct {
+    charset string
+    logger  *zap.Logger
+}
+
+// NewGenerator creates a new hint generator with the specified charset.
+//
+// The charset should contain unique characters. Common choices are:
+//   - "asdfghjkl" for home row keys
+//   - "abcdefghijklmnopqrstuvwxyz" for all letters
+func NewGenerator(charset string, logger *zap.Logger) *Generator {
+    return &Generator{
+        charset: charset,
+        logger:  logger,
+    }
+}
+```
+
+## Objective-C Conventions
+
+For macOS platform integration code:
+
+### File Structure
+
+- **Header files** (`.h`): Interface declarations only
+- **Implementation files** (`.m`): Method implementations
+- Always use `//go:build darwin` tag for macOS-specific files
+
+```objc
+// accessibility_darwin.h
+//go:build darwin
+
+#import <Cocoa/Cocoa.h>
+
+@interface AccessibilityElement : NSObject
+- (instancetype)initWithAXElement:(AXUIElementRef)element;
+- (CGRect)frame;
+@end
+```
+
+### Naming Conventions
+
+- **Classes**: PascalCase with descriptive prefixes (e.g., `AccessibilityElement`)
+- **Methods**: camelCase, start with verb (e.g., `getElementAtPosition:`)
+- **Properties**: camelCase (e.g., `elementFrame`)
+- **Constants**: kPascalCase (e.g., `kDefaultTimeout`)
+
+### Memory Management
+
+Use ARC (Automatic Reference Counting) properly:
+
+```objc
+// Good - proper memory management
+- (NSArray *)getElements {
+    NSMutableArray *elements = [[NSMutableArray alloc] init];
+    // ARC handles deallocation
+    return elements;
+}
+
+// Manual retain/release for Core Foundation types
+AXUIElementRef element = AXUIElementCreateSystemWide();
+if (element) {
+    // Use element
+    CFRelease(element);  // Must release manually
+}
+```
+
+## Code Comments
+
+### When to Comment
+
+<Tabs>
+  <Tab title="Do Comment">
+    - Complex algorithms or logic
+    - Non-obvious performance optimizations
+    - Workarounds for bugs or limitations
+    - Public APIs and exported symbols
+    - Package-level documentation
+    
+    ```go
+    // Pre-allocate slice capacity to avoid reallocations during hint generation.
+    // Typical hint count is 50-200 elements, so we start with 100.
+    hints := make([]Hint, 0, 100)
+    ```
+  </Tab>
+  
+  <Tab title="Don't Comment">
+    - Obvious code that explains itself
+    - Redundant information already in the code
+    - Outdated information (update or remove)
+    
+    ```go
+    // Bad - obvious
+    i++  // increment i
+    
+    // Bad - redundant
+    // getUserByID gets a user by ID
+    func getUserByID(id string) (*User, error) {
+    ```
+  </Tab>
+</Tabs>
+
+## Git Commit Standards
+
+### Commit Message Format
+
+Use [Conventional Commits](https://www.conventionalcommits.org/) for automated releases:
+
+```
+<type>(<optional scope>): <subject>
+
+<optional body>
+
+<optional footer>
+```
+
+### Commit Types
+
+| Type | Description | Example |
+|------|-------------|----------|
+| `feat` | New feature | `feat(grid): add recursive subdivision mode` |
+| `fix` | Bug fix | `fix(hints): correct overlay positioning` |
+| `docs` | Documentation | `docs: update configuration reference` |
+| `style` | Formatting | `style: format accessibility adapter` |
+| `refactor` | Code restructuring | `refactor: extract hint generation logic` |
+| `perf` | Performance | `perf: optimize element filtering` |
+| `test` | Tests | `test: add integration tests for IPC` |
+| `chore` | Build/deps | `chore: update dependencies` |
+
+### Good Commit Examples
+
+<CodeGroup>
+
+```bash Feature Addition
+feat(grid): add recursive subdivision mode
+
+Implement recursive grid navigation allowing users to progressively
+subdivide grid cells for precise cursor positioning.
+
+- Add RecursiveGridMode implementation
+- Update handler to support recursive navigation
+- Add configuration options for subdivision
+
+Closes #123
+```
+
+```bash Bug Fix
+fix(hints): correct overlay positioning on multi-monitor setups
+
+Overlays were positioned incorrectly when using multiple monitors
+with different resolutions. Now correctly accounts for screen bounds.
+
+Fixes #456
+```
+
+```bash Documentation
+docs: update configuration reference for scroll mode
+
+Add missing configuration options and improve examples for scroll
+mode keybindings and behavior.
+```
+
+</CodeGroup>
+
+## Pre-commit Checklist
+
+Before committing code, ensure:
+
+<Steps>
+  <Step title="Format code">
+    ```bash
+    just fmt
+    ```
+  </Step>
+  
+  <Step title="Run linters">
+    ```bash
+    just lint
+    ```
+  </Step>
+  
+  <Step title="Run tests">
+    ```bash
+    just test
+    ```
+  </Step>
+  
+  <Step title="Build successfully">
+    ```bash
+    just build
+    ```
+  </Step>
+  
+  <Step title="Update documentation">
+    If your changes affect user-facing features or APIs, update relevant documentation.
+  </Step>
+  
+  <Step title="Review commit message">
+    Ensure your commit message follows the conventional commits format.
+  </Step>
+</Steps>
+
+## Formatting Commands
+
+### Automatic Formatting
+
+```bash
+# Format all code (Go + Objective-C)
+just fmt
+
+# Check formatting without making changes
+just fmt-check
+```
+
+### Manual Formatting
+
+```bash
+# Format Go code only
+golangci-lint fmt
+golangci-lint run --fix
+
+# Format Objective-C code only
+find internal/core/infra \( -name "*.h" -o -name "*.m" \) -exec clang-format -i --style=file --assume-filename=file.m {} \;
+```
+
+## Linting
+
+### Run Linters
+
+```bash
+# Run all linters
+just lint
+
+# Run Go linters with auto-fix
+golangci-lint run --fix
+```
+
+### Common Linting Issues
+
+<AccordionGroup>
+  <Accordion title="Import organization">
+    Use `goimports` or run `just fmt` to automatically organize imports.
+  </Accordion>
+  
+  <Accordion title="Unused variables">
+    Remove unused variables or use `_` for intentionally unused values:
+    ```go
+    _, err := someFunction()  // Ignore first return value
+    ```
+  </Accordion>
+  
+  <Accordion title="Error handling">
+    Always handle or explicitly ignore errors:
+    ```go
+    // Good
+    if err := doSomething(); err != nil {
+        return err
+    }
+    
+    // Good (intentionally ignored)
+    _ = doSomething()
+    
+    // Bad
+    doSomething()  // Error ignored without acknowledgment
+    ```
+  </Accordion>
+  
+  <Accordion title="Platform-specific imports">
+    Never import darwin-specific packages from non-darwin code. Use the ports/adapters pattern:
+    ```go
+    // Bad (in non-darwin file)
+    import "github.com/y3owk1n/neru/internal/core/infra/platform/darwin"
+    
+    // Good (use port interface)
+    import "github.com/y3owk1n/neru/internal/core/ports"
+    ```
+  </Accordion>
+</AccordionGroup>
+
+## Architecture Guidelines
+
+### Layer Separation
+
+Follow Neru's hexagonal architecture:
+
+1. **Domain Layer** (`internal/core/domain`): Pure business logic, no external dependencies
+2. **Ports Layer** (`internal/core/ports`): Interface contracts between layers
+3. **Application Layer** (`internal/app`): Use case orchestration and business workflows
+4. **Infrastructure Layer** (`internal/core/infra`): Platform-specific implementations
+
+### Platform Isolation
+
+<Warning>
+  **Critical Rule**: Non-darwin-tagged code must NEVER import `internal/core/infra/platform/darwin`. This is enforced by `golangci-lint` using `depguard`.
+</Warning>
+
+```go
+// ✅ Good - using port interface
+type HintService struct {
+    accessibility ports.AccessibilityPort
+}
+
+// ❌ Bad - direct platform import
+import "github.com/y3owk1n/neru/internal/core/infra/platform/darwin"
+```
+
+## References
+
+<CardGroup cols={2}>
+  <Card title="Effective Go" icon="golang" href="https://golang.org/doc/effective_go">
+    Official Go programming guide
+  </Card>
+  
+  <Card title="Code Review Comments" icon="comments" href="https://github.com/golang/go/wiki/CodeReviewComments">
+    Go community code review standards
+  </Card>
+  
+  <Card title="Uber Go Style Guide" icon="book" href="https://github.com/uber-go/guide/blob/master/style.md">
+    Comprehensive Go style guide
+  </Card>
+  
+  <Card title="Apple Cocoa Guidelines" icon="apple" href="https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/CodingGuidelines/CodingGuidelines.html">
+    Objective-C coding guidelines
+  </Card>
+</CardGroup>
